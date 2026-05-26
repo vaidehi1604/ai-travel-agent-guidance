@@ -1,0 +1,671 @@
+{
+  "overview": {
+    "tripTitle": "Ahmedabad to Goa – 5-Day Beach & Culture Escape",
+    "source": "Ahmedabad",
+    "destination": "Goa",
+    "duration": 5,
+    "durationUnit": "days",
+    "numberOfTravelers": 2,
+    "tripType": "Leisure / Beach Holiday",
+    "startDate": "2026-06-01",
+    "endDate": "2026-06-05",
+    "season": "Pre-Monsoon (June)",
+    "currency": "INR",
+    "budgetTier": "Mid-Range (3-Star)",
+    "notes": "Prices are per couple unless specified. INR estimates based on 2026 averages."
+  },
+
+  "travelOptions": [
+    {
+      "id": "flight",
+      "mode": "Flight",
+      "icon": "plane",
+      "recommended": true,
+      "arrival": {
+        "route": "Ahmedabad (AMD) → Goa (GOI)",
+        "airline": "IndiGo / Air India Express",
+        "departureTime": "06:00",
+        "arrivalTime": "07:45",
+        "duration": "1h 45m",
+        "class": "Economy",
+        "costPerPerson": 3800,
+        "costForTwo": 7600,
+        "baggage": "15kg check-in included",
+        "bookingPlatforms": ["MakeMyTrip", "Cleartrip", "EaseMyTrip"],
+        "tips": "Book 30–45 days in advance for best rates. Early morning flights are cheapest."
+      },
+      "return": {
+        "route": "Goa (GOI) → Ahmedabad (AMD)",
+        "airline": "IndiGo / SpiceJet",
+        "departureTime": "18:30",
+        "arrivalTime": "20:15",
+        "duration": "1h 45m",
+        "class": "Economy",
+        "costPerPerson": 4200,
+        "costForTwo": 8400,
+        "baggage": "15kg check-in included",
+        "tips": "Evening return flights tend to be slightly pricier; check 6-week advance booking."
+      },
+      "totalTravelCost": 16000,
+      "airportTransferCost": 1200,
+      "grandTotalWithTransfer": 17200,
+      "pros": ["Fastest mode – under 2 hours", "Most comfortable", "Best for short trips"],
+      "cons": ["Higher cost", "Airport check-in time adds ~2 hrs each way"]
+    },
+    {
+      "id": "train",
+      "mode": "Train (Express)",
+      "icon": "train",
+      "recommended": false,
+      "arrival": {
+        "route": "Ahmedabad Junction → Madgaon (Goa)",
+        "trainName": "Ahmedabad–Vasco Express (19261)",
+        "departureTime": "05:30",
+        "arrivalTime": "06:00 next day",
+        "duration": "~24h 30m",
+        "class": "3A (AC 3-Tier)",
+        "costPerPerson": 1450,
+        "costForTwo": 2900,
+        "bookingPlatforms": ["IRCTC"],
+        "tips": "Book Tatkal if last-minute. 3A is comfortable for overnight journeys."
+      },
+      "return": {
+        "route": "Madgaon (Goa) → Ahmedabad Junction",
+        "trainName": "Vasco–Ahmedabad Express (19262)",
+        "departureTime": "13:15",
+        "arrivalTime": "14:00 next day",
+        "duration": "~24h 45m",
+        "class": "3A (AC 3-Tier)",
+        "costPerPerson": 1450,
+        "costForTwo": 2900,
+        "tips": "Reserve return tickets simultaneously as availability fills quickly."
+      },
+      "totalTravelCost": 5800,
+      "stationTransferCost": 600,
+      "grandTotalWithTransfer": 6400,
+      "pros": ["Most affordable", "Scenic coastal routes", "No baggage restrictions"],
+      "cons": ["Very long journey (~25 hours each way)", "Limited flexibility"]
+    },
+    {
+      "id": "bus_car",
+      "mode": "Bus / Self-Drive Car",
+      "icon": "bus",
+      "recommended": false,
+      "arrival": {
+        "route": "Ahmedabad → Goa (via NH48 / NH66)",
+        "options": [
+          {
+            "type": "Volvo AC Sleeper Bus",
+            "operator": "VRL Travels / SRS Travels",
+            "departureTime": "15:00",
+            "arrivalTime": "08:30 next day",
+            "duration": "~17–19h",
+            "costPerPerson": 1200,
+            "costForTwo": 2400
+          },
+          {
+            "type": "Self-Drive Car (Innova / Swift)",
+            "route": "Ahmedabad → Vadodara → Mumbai → Goa",
+            "distance": "~1050 km",
+            "duration": "~18–20h",
+            "fuelCost": 7500,
+            "tollCost": 1800,
+            "totalCarCost": 9300,
+            "note": "Split across 2 days recommended; budget for 1 night stay en route ~₹2000"
+          }
+        ]
+      },
+      "return": {
+        "options": [
+          {
+            "type": "Volvo AC Sleeper Bus",
+            "costPerPerson": 1300,
+            "costForTwo": 2600
+          },
+          {
+            "type": "Self-Drive Car",
+            "fuelCost": 7500,
+            "tollCost": 1800,
+            "totalCarCost": 9300
+          }
+        ]
+      },
+      "totalTravelCost": {
+        "bus": 5000,
+        "car": 18600
+      },
+      "pros": ["Bus: Very budget-friendly", "Car: Maximum flexibility, scenic drive"],
+      "cons": ["Bus: Uncomfortable for 18+ hours", "Car: High fuel cost, driver fatigue"]
+    }
+  ],
+
+  "accommodation": {
+    "type": "3-Star Hotel",
+    "location": "North Goa (Calangute / Baga / Anjuna area)",
+    "checkIn": "2026-06-01",
+    "checkOut": "2026-06-05",
+    "nights": 4,
+    "rooms": 1,
+    "roomType": "Standard AC Double Room",
+    "averageRatePerNight": 3200,
+    "totalHotelCost": 12800,
+    "inclusions": ["Complimentary breakfast (Day 1 only)", "Wi-Fi", "AC", "Daily housekeeping"],
+    "suggestedHotels": [
+      {
+        "name": "Dunes Hotel & Apartments",
+        "area": "Calangute",
+        "pricePerNight": 2800,
+        "rating": 3.5,
+        "amenities": ["Pool", "Restaurant", "Spa", "Free Wi-Fi"]
+      },
+      {
+        "name": "Park Inn by Radisson Goa",
+        "area": "Candolim",
+        "pricePerNight": 3500,
+        "rating": 3.8,
+        "amenities": ["Rooftop Pool", "Bar", "Gym", "Airport Shuttle"]
+      },
+      {
+        "name": "La Cabana Beach & Spa",
+        "area": "Arpora",
+        "pricePerNight": 3200,
+        "rating": 3.4,
+        "amenities": ["Pool", "Spa", "Beach Access", "Restaurant"]
+      }
+    ]
+  },
+
+  "dayWiseBudget": [
+    {
+      "day": 1,
+      "date": "2026-06-01",
+      "title": "Arrival & Beach Orientation",
+      "theme": "✈ Arrival Day",
+      "accommodation": {
+        "description": "Check-in to 3-star hotel (Calangute)",
+        "cost": 3200
+      },
+      "meals": {
+        "breakfast": {
+          "description": "Hotel complimentary or airport café",
+          "cost": 0
+        },
+        "lunch": {
+          "description": "Seafood lunch at Britto's, Baga Beach",
+          "items": ["Fish Thali", "Fresh Lime Soda", "Prawn Masala"],
+          "cost": 900
+        },
+        "dinner": {
+          "description": "Dinner at Infantaria Café, Calangute",
+          "items": ["Goan Fish Curry Rice", "Bebinca Dessert", "Beer"],
+          "cost": 1100
+        },
+        "snacks": {
+          "description": "Beach-side snacks & coconut water",
+          "cost": 300
+        },
+        "totalMealCost": 2300
+      },
+      "localTransport": {
+        "items": [
+          { "type": "Airport/Station to Hotel (Cab)", "cost": 600 },
+          { "type": "Auto-rickshaw to beach", "cost": 150 }
+        ],
+        "totalTransportCost": 750
+      },
+      "sightseeing": {
+        "activities": [
+          { "name": "Baga Beach evening stroll", "cost": 0 },
+          { "name": "Sunset at Calangute Beach", "cost": 0 }
+        ],
+        "totalSightseeingCost": 0
+      },
+      "shopping": {
+        "description": "Basic toiletries / forgot items",
+        "cost": 500
+      },
+      "miscellaneous": {
+        "description": "Water bottles, phone charging, incidentals",
+        "cost": 200
+      },
+      "dailyTotal": {
+        "accommodation": 3200,
+        "meals": 2300,
+        "localTransport": 750,
+        "sightseeing": 0,
+        "shopping": 500,
+        "miscellaneous": 200,
+        "total": 6950
+      }
+    },
+    {
+      "day": 2,
+      "date": "2026-06-02",
+      "title": "North Goa Exploration",
+      "theme": "🏖 Beaches & Churches",
+      "accommodation": {
+        "description": "2nd night at hotel",
+        "cost": 3200
+      },
+      "meals": {
+        "breakfast": {
+          "description": "Hotel restaurant / Café Mambos",
+          "items": ["Eggs Benedict", "Toast", "Coffee"],
+          "cost": 450
+        },
+        "lunch": {
+          "description": "Fisherman's Wharf, Calapor",
+          "items": ["Grilled Pomfret", "Prawn Balchão", "Cold Beer"],
+          "cost": 1200
+        },
+        "dinner": {
+          "description": "Souza Lobo Restaurant, Calangute",
+          "items": ["Goan Sausage Platter", "Fish Curry Rice", "Feni"],
+          "cost": 1400
+        },
+        "snacks": {
+          "description": "Local cashew nuts, local bakery puffs",
+          "cost": 350
+        },
+        "totalMealCost": 3400
+      },
+      "localTransport": {
+        "items": [
+          { "type": "Scooter rental (full day for 2)", "cost": 600 },
+          { "type": "Fuel (petrol)", "cost": 150 }
+        ],
+        "totalTransportCost": 750
+      },
+      "sightseeing": {
+        "activities": [
+          { "name": "Basilica of Bom Jesus (Old Goa)", "cost": 0 },
+          { "name": "Se Cathedral entrance", "cost": 30 },
+          { "name": "Fontainhas Latin Quarter walking tour", "cost": 0 },
+          { "name": "Fort Aguada sunset visit", "cost": 0 }
+        ],
+        "totalSightseeingCost": 30
+      },
+      "shopping": {
+        "description": "Mapusa Friday Market – spices, cashews, souvenirs",
+        "cost": 1200
+      },
+      "miscellaneous": {
+        "description": "Parking, photography, water, tips",
+        "cost": 300
+      },
+      "dailyTotal": {
+        "accommodation": 3200,
+        "meals": 3400,
+        "localTransport": 750,
+        "sightseeing": 30,
+        "shopping": 1200,
+        "miscellaneous": 300,
+        "total": 8880
+      }
+    },
+    {
+      "day": 3,
+      "date": "2026-06-03",
+      "title": "Adventure & Water Sports",
+      "theme": "🏄 Action Day",
+      "accommodation": {
+        "description": "3rd night at hotel",
+        "cost": 3200
+      },
+      "meals": {
+        "breakfast": {
+          "description": "Hotel breakfast or Utorda café",
+          "items": ["Poha", "Idli-Vada", "Chai"],
+          "cost": 350
+        },
+        "lunch": {
+          "description": "Shack lunch at Anjuna Beach (La Plage)",
+          "items": ["Burger", "Nachos", "Fruit Shake"],
+          "cost": 1100
+        },
+        "dinner": {
+          "description": "Thalassa Greek Restaurant, Vagator",
+          "items": ["Mediterranean Platter", "Wine (half bottle)", "Gelato"],
+          "cost": 2200
+        },
+        "snacks": {
+          "description": "Feni shots, fresh coconut",
+          "cost": 300
+        },
+        "totalMealCost": 3950
+      },
+      "localTransport": {
+        "items": [
+          { "type": "Scooter rental (full day)", "cost": 600 },
+          { "type": "Fuel", "cost": 150 }
+        ],
+        "totalTransportCost": 750
+      },
+      "sightseeing": {
+        "activities": [
+          { "name": "Parasailing (Baga Beach)", "costPerPerson": 1200, "costForTwo": 2400 },
+          { "name": "Banana Boat Ride (per ride)", "costPerPerson": 500, "costForTwo": 1000 },
+          { "name": "Jet Ski (15 min)", "costPerPerson": 800, "costForTwo": 1600 },
+          { "name": "Anjuna Flea Market browsing", "cost": 0 }
+        ],
+        "totalSightseeingCost": 5000
+      },
+      "shopping": {
+        "description": "Hippie market clothing & trinkets",
+        "cost": 800
+      },
+      "miscellaneous": {
+        "description": "Sunscreen, water, tips for instructors",
+        "cost": 400
+      },
+      "dailyTotal": {
+        "accommodation": 3200,
+        "meals": 3950,
+        "localTransport": 750,
+        "sightseeing": 5000,
+        "shopping": 800,
+        "miscellaneous": 400,
+        "total": 14100
+      }
+    },
+    {
+      "day": 4,
+      "date": "2026-06-04",
+      "title": "South Goa – Serenity & Spice",
+      "theme": "🌿 Culture & Relaxation",
+      "accommodation": {
+        "description": "4th (final) night at hotel",
+        "cost": 3200
+      },
+      "meals": {
+        "breakfast": {
+          "description": "Traditional Goan Café – Martin's Corner",
+          "items": ["Pão", "Butter", "Goan Omelette", "Tea"],
+          "cost": 400
+        },
+        "lunch": {
+          "description": "Colva Beach shack",
+          "items": ["Crab Curry", "Rice", "Sol Kadhi"],
+          "cost": 1300
+        },
+        "dinner": {
+          "description": "Sunset dinner cruise (Mandovi River)",
+          "items": ["Buffet dinner", "Live music", "Wine"],
+          "costPerPerson": 1500,
+          "costForTwo": 3000
+        },
+        "snacks": {
+          "description": "Fresh fruit, street corn",
+          "cost": 250
+        },
+        "totalMealCost": 4950
+      },
+      "localTransport": {
+        "items": [
+          { "type": "Cab to South Goa (round trip, shared)", "cost": 1200 },
+          { "type": "Local auto within South Goa", "cost": 300 }
+        ],
+        "totalTransportCost": 1500
+      },
+      "sightseeing": {
+        "activities": [
+          { "name": "Dudhsagar Falls day trip (shared jeep)", "costPerPerson": 700, "costForTwo": 1400 },
+          { "name": "Palolem Beach entry", "cost": 0 },
+          { "name": "Butterfly Beach boat trip", "costPerPerson": 400, "costForTwo": 800 },
+          { "name": "Mandovi River Sunset Cruise", "costPerPerson": 400, "costForTwo": 800 }
+        ],
+        "totalSightseeingCost": 3000
+      },
+      "shopping": {
+        "description": "Spice garden store – spices, Goan wine",
+        "cost": 1500
+      },
+      "miscellaneous": {
+        "description": "Entry fees (Dudhsagar forest), camera charges",
+        "cost": 500
+      },
+      "dailyTotal": {
+        "accommodation": 3200,
+        "meals": 4950,
+        "localTransport": 1500,
+        "sightseeing": 3000,
+        "shopping": 1500,
+        "miscellaneous": 500,
+        "total": 14650
+      }
+    },
+    {
+      "day": 5,
+      "date": "2026-06-05",
+      "title": "Departure Day",
+      "theme": "✈ Checkout & Farewell",
+      "accommodation": {
+        "description": "No stay (checkout by 11:00 AM)",
+        "cost": 0
+      },
+      "meals": {
+        "breakfast": {
+          "description": "Hotel checkout breakfast",
+          "items": ["Continental breakfast"],
+          "cost": 400
+        },
+        "lunch": {
+          "description": "Quick lunch near airport / Casa Bhosle",
+          "items": ["Veg Thali", "Lassi"],
+          "cost": 700
+        },
+        "dinner": {
+          "description": "In-flight meal / Airport snacks",
+          "cost": 500
+        },
+        "snacks": {
+          "description": "Airport water, snacks for journey",
+          "cost": 300
+        },
+        "totalMealCost": 1900
+      },
+      "localTransport": {
+        "items": [
+          { "type": "Hotel to Goa Airport (cab)", "cost": 700 },
+          { "type": "Luggage trolley / porter tip", "cost": 100 }
+        ],
+        "totalTransportCost": 800
+      },
+      "sightseeing": {
+        "activities": [
+          { "name": "Last-minute stroll at Miramar Beach", "cost": 0 }
+        ],
+        "totalSightseeingCost": 0
+      },
+      "shopping": {
+        "description": "Airport duty-free / last-minute gifts",
+        "cost": 1000
+      },
+      "miscellaneous": {
+        "description": "Tips for hotel staff, porter",
+        "cost": 300
+      },
+      "dailyTotal": {
+        "accommodation": 0,
+        "meals": 1900,
+        "localTransport": 800,
+        "sightseeing": 0,
+        "shopping": 1000,
+        "miscellaneous": 300,
+        "total": 4000
+      }
+    }
+  ],
+
+  "budgetSummary": {
+    "travelCosts": {
+      "byMode": {
+        "flight": {
+          "arrival": 7600,
+          "return": 8400,
+          "airportTransfers": 1200,
+          "total": 17200
+        },
+        "train": {
+          "arrival": 2900,
+          "return": 2900,
+          "stationTransfers": 600,
+          "total": 6400
+        },
+        "bus": {
+          "arrival": 2400,
+          "return": 2600,
+          "total": 5000
+        }
+      },
+      "recommendedMode": "Flight",
+      "recommendedModeCost": 17200
+    },
+    "accommodationTotal": 12800,
+    "dayWiseTotals": [
+      { "day": 1, "title": "Arrival Day", "total": 6950 },
+      { "day": 2, "title": "North Goa Exploration", "total": 8880 },
+      { "day": 3, "title": "Adventure Day", "total": 14100 },
+      { "day": 4, "title": "South Goa & Cruise", "total": 14650 },
+      { "day": 5, "title": "Departure Day", "total": 4000 }
+    ],
+    "categoryTotals": {
+      "accommodation": 12800,
+      "meals": {
+        "breakfasts": 1600,
+        "lunches": 5200,
+        "dinners": 8200,
+        "snacksAndDrinks": 1500,
+        "total": 16500
+      },
+      "localTransport": 4550,
+      "sightseeing": 8030,
+      "shopping": 5000,
+      "miscellaneous": 1700
+    },
+    "tripCostBreakdown": {
+      "travelCost_flight": 17200,
+      "accommodationCost": 12800,
+      "dailyExpensesTotal": 48580,
+      "grandTotalForTwo": 65780,
+      "grandTotalRange": {
+        "budget_flight": { "min": 60000, "max": 70000 },
+        "budget_train": { "min": 52000, "max": 58000 },
+        "budget_bus": { "min": 50000, "max": 56000 }
+      }
+    },
+    "perPersonEstimate": {
+      "usingFlight": {
+        "travelCost": 8600,
+        "accommodation": 6400,
+        "dailyExpenses": 24290,
+        "totalPerPerson": 32890,
+        "totalPerPersonRange": "₹30,000 – ₹37,000"
+      },
+      "usingTrain": {
+        "travelCost": 3200,
+        "accommodation": 6400,
+        "dailyExpenses": 24290,
+        "totalPerPerson": 27490,
+        "totalPerPersonRange": "₹25,000 – ₹30,000"
+      },
+      "usingBus": {
+        "travelCost": 2500,
+        "accommodation": 6400,
+        "dailyExpenses": 24290,
+        "totalPerPerson": 25290,
+        "totalPerPersonRange": "₹23,000 – ₹28,000"
+      }
+    },
+    "finalTripTotalRange": {
+      "economyTrip_train": "₹52,000 – ₹58,000 (for 2)",
+      "midRangeTrip_flight": "₹62,000 – ₹72,000 (for 2)",
+      "splurgeTrip_flight_luxury": "₹85,000 – ₹1,20,000 (for 2)"
+    },
+    "savingsOpportunities": [
+      {
+        "category": "Travel",
+        "tip": "Choosing train over flight saves ~₹10,800 for two",
+        "potentialSaving": 10800
+      },
+      {
+        "category": "Accommodation",
+        "tip": "Booking via MakeMyTrip promo codes can save 15–20%",
+        "potentialSaving": 2000
+      },
+      {
+        "category": "Water Sports",
+        "tip": "Bundle packages for all 3 activities instead of booking separately",
+        "potentialSaving": 1500
+      },
+      {
+        "category": "Food",
+        "tip": "Eat at local beach shacks vs. tourist restaurants – save ₹500/day",
+        "potentialSaving": 2500
+      }
+    ]
+  },
+
+  "tips": [
+    {
+      "category": "Booking",
+      "icon": "calendar",
+      "tip": "Book flights and hotels at least 3–4 weeks in advance. Goa fills up fast, especially on weekends and pre-monsoon.",
+      "priority": "High"
+    },
+    {
+      "category": "Transport",
+      "icon": "scooter",
+      "tip": "Rent a scooter (₹300–400/day per bike) for maximum freedom. It's the best way to explore Goa on a budget. Carry your driving license.",
+      "priority": "High"
+    },
+    {
+      "category": "Food",
+      "icon": "utensils",
+      "tip": "Beach shacks offer the most authentic Goan food at great prices. Avoid restaurants near 5-star hotels — they mark up prices by 40–60%.",
+      "priority": "Medium"
+    },
+    {
+      "category": "Water Sports",
+      "icon": "waves",
+      "tip": "Bargain hard! Water sport operators often quote 2x the fair price. Bundle activities together to get 20–30% discount.",
+      "priority": "High"
+    },
+    {
+      "category": "Currency",
+      "icon": "wallet",
+      "tip": "Carry ₹5,000–8,000 in cash. Many beach shacks and local markets are cash-only. ATMs charge fees in tourist areas.",
+      "priority": "High"
+    },
+    {
+      "category": "Shopping",
+      "icon": "shopping-bag",
+      "tip": "Best buys: Cashews (₹350–500/kg at Mapusa), Goan wine (₹150–300/bottle), spices, and local handicrafts. Avoid Calangute main market – inflated prices.",
+      "priority": "Medium"
+    },
+    {
+      "category": "Season",
+      "icon": "cloud",
+      "tip": "Traveling in June (pre-monsoon) means fewer crowds and lower hotel prices (up to 30% off peak). Some beach shacks close post-June 15th as monsoon arrives.",
+      "priority": "Medium"
+    },
+    {
+      "category": "Safety",
+      "icon": "shield",
+      "tip": "Don't carry valuables to beaches. Use hotel lockers. Be careful of rip currents during pre-monsoon – swim only at lifeguard-patrolled beaches.",
+      "priority": "High"
+    },
+    {
+      "category": "Dudhsagar Falls",
+      "icon": "waterfall",
+      "tip": "Dudhsagar Jeep safari is only available Oct–May. In June (monsoon start), access may be restricted. Confirm availability before booking.",
+      "priority": "High"
+    },
+    {
+      "category": "Budget Buffer",
+      "icon": "piggy-bank",
+      "tip": "Always keep a 10–15% buffer (₹6,000–8,000) above your planned budget for unexpected expenses, medical needs, or spontaneous activities.",
+      "priority": "High"
+    }
+  ]
+}
