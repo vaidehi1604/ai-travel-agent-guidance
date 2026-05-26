@@ -12,9 +12,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@langchain/community": "^0.3.59",
+    "@langchain/community": "^1.0.0",
     "@langchain/core": "^1.1.44",
-    "@langchain/groq": "^0.2.4",
+    "@langchain/groq": "^1.0.0",
     "@langchain/langgraph": "^1.3.0",
     "axios": "^1.16.0",
     "bcrypt": "^6.0.0",
