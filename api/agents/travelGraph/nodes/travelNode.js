@@ -31,7 +31,7 @@ const travelNode = async (state) => {
   - pros: Array of pros
   - cons: Array of cons
 
-  Return ONLY a valid JSON object.`;
+  CRITICAL: Return ONLY a valid JSON object matching the schema. Do NOT include any introductory, conversational, or concluding text (e.g., do NOT start with "Based on the...", and do NOT include any trailing notes or explanations). You must output nothing else except the raw JSON structure.`;
 
   const response = await llm.invoke([
     new SystemMessage(systemPrompt),

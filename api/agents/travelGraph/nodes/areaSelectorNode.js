@@ -21,7 +21,9 @@ const areaSelectorNode = async (state) => {
   - Warn about areas that might be rainy or have bad weather.
   - Recommend the absolute best area based on user preferences: ${intent.preferences}.
 
-  Return ONLY a valid JSON object with:
+  CRITICAL: Return ONLY a valid JSON object matching the format below. Do NOT include any introductory, conversational, or concluding text (e.g., do NOT start with "Based on the...", and do NOT include any trailing notes or explanations). You must output nothing else except the raw JSON structure.
+
+  Format:
   {
     "best_areas": ["Area 1", "Area 2"],
     "rainy_areas": ["Area 3"],

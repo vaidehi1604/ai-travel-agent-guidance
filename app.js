@@ -2,6 +2,10 @@ if (!globalThis.crypto) {
   const { webcrypto } = require('node:crypto');
   globalThis.crypto = webcrypto;
 }
+// Increase default max listeners globally to prevent MaxListenersExceededWarning from LangGraph's sequential nodes
+const { setMaxListeners } = require('node:events');
+setMaxListeners(50);
+
 require('dotenv').config();
 
 // Modules

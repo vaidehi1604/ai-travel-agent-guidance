@@ -54,6 +54,10 @@ const TravelGraphState = Annotation.Root({
     reducer: (x, y) => y ?? x,
   }),
 
+  budget: Annotation({
+    reducer: (x, y) => y ?? x,
+  }),
+
   activities: Annotation({
     reducer: (x, y) => y ?? x,
   }),

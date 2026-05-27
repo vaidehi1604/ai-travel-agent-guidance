@@ -1,12 +1,12 @@
 const { llm } = require('../../../../config/llm');
-const { HumanMessage, SystemMessage } = require("@langchain/core/messages");
+const { HumanMessage, SystemMessage } = require('@langchain/core/messages');
 const { safeJsonParse } = require('../../../../utils/jsonParser');
 
 /**
  * Itinerary Agent: Generates the final day-wise plan
  */
 const itineraryNode = async (state) => {
-  console.log("--- ITINERARY AGENT ---");
+  console.log('--- ITINERARY AGENT ---');
   if (state.error || !state.intent) return state;
 
   const { intent, weather, areas, travel, budget, hotels, activities } = state;
@@ -28,9 +28,19 @@ const itineraryNode = async (state) => {
   - "afternoon": string
   - "evening": string
   - "restaurants": array of strings
-  - "tips": string (Weather-aware tips based on the provided weather forecast, e.g., "Carry an umbrella as rain is expected in the afternoon")
+  - "tips": string
+Tips must be intelligent and weather-aware.
+Use provided weather/climate conditions to generate useful travel advice.
 
-  Return ONLY a valid JSON object in the following format:
+Examples:
+- Recommend thermal wear during snowfall/cold weather
+- Recommend umbrellas during rain
+- Recommend sunscreen during hot weather
+- Recommend avoiding trekking during storms/heavy snowfall
+
+  CRITICAL: Return ONLY a valid JSON array matching the format below. Do NOT include any introductory, conversational, or concluding text (e.g., do NOT start with "Based on the...", and do NOT include any trailing notes or explanations). You must output nothing else except the raw JSON structure.
+
+  Format:
   [
     {
       "title": "Day 1",
@@ -44,16 +54,21 @@ const itineraryNode = async (state) => {
 
   const response = await llm.invoke([
     new SystemMessage(systemPrompt),
-    new HumanMessage(`Destination: ${intent.destination}, Days: ${intent.days}`)
+    new HumanMessage(
+      `Destination: ${intent.destination}, Days: ${intent.days}`
+    ),
   ]);
 
   const itinerary = safeJsonParse(response.content);
   if (!itinerary) {
-    console.error("Failed to parse itinerary:", response.content);
-    return { error: "Failed to generate itinerary from LLM response", status: "error" };
+    console.error('Failed to parse itinerary:', response.content);
+    return {
+      error: 'Failed to generate itinerary from LLM response',
+      status: 'error',
+    };
   }
 
-  return { itinerary, status: "itinerary_generated" };
+  return { itinerary, status: 'itinerary_generated' };
 };
 
 module.exports = { itineraryNode };

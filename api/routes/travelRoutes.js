@@ -8,6 +8,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 router.use(authMiddleware);
 
 router.post('/plan', travelController.generatePlan);
+router.put('/plan/:id', travelController.updatePlan);
 router.get('/history', travelController.getHistory);
 router.delete('/history/:id', travelController.deleteHistory);
 

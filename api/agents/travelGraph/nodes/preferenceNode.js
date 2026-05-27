@@ -39,7 +39,7 @@ const preferenceNode = async (state) => {
   3. If the user's input is a correction or update (e.g., "actually 5 people" or "let's go to Indore instead"), update the values accordingly.
   4. If the input is ambiguous but history provides context, use the history.
 
-  Return ONLY a valid JSON object containing the updated intent.`;
+  CRITICAL: Return ONLY a valid JSON object containing the updated intent. Do NOT include any introductory, conversational, or concluding text (e.g., do NOT start with "Based on the...", and do NOT include any trailing notes or explanations). You must output nothing else except the raw JSON structure.`;
 
   const response = await llm.invoke([
     new SystemMessage(systemPrompt),

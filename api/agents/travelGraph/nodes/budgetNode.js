@@ -1,6 +1,7 @@
 const { llm } = require('../../../../config/llm');
 const { HumanMessage, SystemMessage } = require("@langchain/core/messages");
 const { safeJsonParse } = require('../../../../utils/jsonParser');
+const axios = require('axios');
 
 /**
  * Budget Agent: Generates a detailed, structured day-wise budget breakdown
@@ -19,14 +20,57 @@ const budgetNode = async (state) => {
     intent.days = 3; // Update state object as well
   }
 
-  const systemPrompt = `You are an expert Financial Travel Planner specializing in Indian travel budgets (INR).
+  // 1. Fetch real-time web pricing details for the destination via Tavily Search
+  const apiKey = process.env.TAVILY_API_KEY;
+  let searchContext = "";
+  if (apiKey) {
+    try {
+      const searchQuery = `average cost of 3 star hotel, 5 star hotel, hostel, daily food cost, taxi fare, sightseeing tickets in ${intent.destination} INR 2026`;
+      const response = await axios.post(
+        'https://api.tavily.com/search',
+        {
+          api_key: apiKey,
+          query: searchQuery,
+          search_depth: "basic",
+          max_results: 3,
+          include_answer: false,
+          include_images: false,
+          include_raw_content: false
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      const results = response.data.results || [];
+      searchContext = results.map(r => `${r.title}: ${r.content}`).join('\n\n');
+      console.log(`🔍 Fetched budget web pricing context for: ${intent.destination}`);
+    } catch (e) {
+      console.warn("⚠️ Tavily search for budget pricing failed. Falling back to LLM knowledge.", e.message);
+    }
+  }
 
+  const limitBudgetVal = parseInt(intent.budget) || 50000;
+
+  const systemPrompt = `You are an expert Financial Travel Planner specializing in Indian travel budgets (INR).
+  
 Generate a detailed, structured travel budget for a ${days}-day trip from ${intent.source || 'the source city'} to ${intent.destination}.
 Overall budget context: ${intent.budget}.
 Travel options already analyzed: ${JSON.stringify(travel?.options || [])}.
 
-Return ONLY a valid JSON object matching EXACTLY this structure — no markdown, no conversational text, no backticks:
+Real-time Web Pricing Context (use this to ensure highly accurate, current hotel/food/transit rates):
+${searchContext || "No real-time web pricing context available."}
 
+CRITICAL CURRENCY & BUDGET CONSTRAINT RULES:
+1. All price values in the JSON MUST be in Indian Rupees (INR).
+2. If the destination is international (e.g. Bali, Dubai, Singapore, Maldives, Thailand), you MUST convert local rates (such as Indonesian Rupiah IDR, UAE Dirham AED, etc.) to INR using realistic standard conversion rates (e.g., 1 IDR = 0.0055 INR, 1 AED = 23 INR, 1 USD = 83 INR).
+3. NEVER output raw local currency values (like 1,800,000 IDR or 500 AED) directly in any cost fields. A typical hotel in Bali must be listed as its INR equivalent (e.g., 2000 to 4000) instead of 800,000.
+4. The grand total of all daily costs and travel options per person MUST NOT exceed the user's total budget limit: ${limitBudgetVal} INR. If the budget is low, scale down lodging tiers (e.g., select hostels or budget homestays) and food choices so that the final estimate fits within the limit.
+
+CRITICAL: Return ONLY a valid JSON object matching the structure below. Do NOT include any introductory, conversational, or concluding text (e.g., do NOT start with "Based on the...", and do NOT include any trailing notes or explanations). You must output nothing else except the raw JSON structure.
+
+Format:
 {
   "overview": {
     "destination": "${intent.destination}",
@@ -92,6 +136,28 @@ Return ONLY a valid JSON object matching EXACTLY this structure — no markdown,
     "totalTrainTrip": <number>,
     "totalBusTrip": <number>
   },
+  "itemizedDetails": {
+    "flights": {
+      "description": "<string detailing airline transit, e.g., 'Round-trip economy flights from origin to destination for X persons'>",
+      "estimatedCost": <number>
+    },
+    "hotels": {
+      "description": "<string detailing accommodations, e.g., 'X nights stay in a recommended 3-star resort for group'>",
+      "estimatedCost": <number>
+    },
+    "meals": {
+      "description": "<string detailing food & drinks, e.g., 'Breakfast, lunch, and dinner estimates for group over X days'>",
+      "estimatedCost": <number>
+    },
+    "transportation": {
+      "description": "<string detailing local transport, e.g., 'Local scooter rental + fuel or private cabs for sightseeing'>",
+      "estimatedCost": <number>
+    },
+    "sightseeing": {
+      "description": "<string detailing entry tickets and tours, e.g., 'Entry fees for primary attractions & local guided activities'>",
+      "estimatedCost": <number>
+    }
+  },
   "tips": [
     "<travel tip 1>",
     "<travel tip 2>",
@@ -101,16 +167,17 @@ Return ONLY a valid JSON object matching EXACTLY this structure — no markdown,
 }
 
 Rules:
-- Use realistic 2026 INR pricing.
-- hotelCost: base on average 3-star hotel pricing for ${intent.destination}.
-- Meals: breakfastCost ~₹150-250, lunchCost ~₹300-600, dinnerCost ~₹400-900 per person (~${intent.persons || 2}x for ${intent.persons || 2} travelers).
-- localTransportCost: average per day scooter/auto/cab.
-- sightseeingCost: entry fees + activities.
-- miscellaneousCost: optional buffer expenses per day (no shopping).
-- dayWiseBudget array must have exactly ${days} entries.
+- Use realistic 2026 INR pricing based on the Web Pricing Context.
+- hotelCost, breakfastCost, lunchCost, dinnerCost, localTransportCost, sightseeingCost, miscellaneousCost MUST be daily estimates PER PERSON.
 - All cost/total values must be numbers (no ₹ symbol, no comma strings).
-- dailyTotal = hotelCost + breakfastCost + lunchCost + dinnerCost + localTransportCost + sightseeingCost + miscellaneousCost.
-- grand totals (e.g. totalFlightTrip) should equal sum of all dayWiseBudget dailyTotals + respective travelOptions totalTravelCost.`;
+- dailyTotal MUST BE mathematically exact: dailyTotal = hotelCost + breakfastCost + lunchCost + dinnerCost + localTransportCost + sightseeingCost + miscellaneousCost.
+- The grand totals inside "budgetSummary" MUST be mathematically consistent:
+  * totalFlightTrip = sum of all dayWiseBudget dailyTotal values + Flight totalTravelCost (divided by travelers number so that everything is per person).
+  * totalTrainTrip = sum of all dayWiseBudget dailyTotal values + Train totalTravelCost (divided by travelers number).
+  * totalBusTrip = sum of all dayWiseBudget dailyTotal values + Bus/Car totalTravelCost (divided by travelers number).
+  * perPersonEstimate = grand total per person of the recommended travel mode option.
+  * finalTripTotalRange.min = perPersonEstimate * 0.9 (rounded).
+  * finalTripTotalRange.max = perPersonEstimate * 1.1 (rounded).`;
 
   const response = await llm.invoke([
     new SystemMessage(systemPrompt),
@@ -125,7 +192,108 @@ Rules:
     return { error: "Failed to generate travel budget from LLM response", status: "error" };
   }
 
+  // Auto-adjust budget breakdown to fit the user's specified budget limit (safety net)
+  if (limitBudgetVal > 0) {
+    const travelOpts = budgetBreakdown.travelOptions || [];
+    const recOpt = travelOpts.find(o => o.recommended) || travelOpts[0];
+    const recommendedTravelCost = recOpt ? (recOpt.totalTravelCost || (recOpt.arrivalCost + recOpt.returnCost) || 0) : 0;
+    const travelersCount = intent.persons || 2;
+    const travelPerPerson = Math.round(recommendedTravelCost / travelersCount);
+
+    const daysList = budgetBreakdown.dayWiseBudget || [];
+    const totalDailyCost = daysList.reduce((s, d) => s + (d.dailyTotal || 0), 0);
+    const grandTotalPerPerson = totalDailyCost + travelPerPerson;
+
+    if (grandTotalPerPerson > limitBudgetVal) {
+      console.log(`⚠️ Budget limit exceeded! Generated: ₹${grandTotalPerPerson}, Limit: ₹${limitBudgetVal}. Scaling down...`);
+      const scaleFactor = (limitBudgetVal * 0.95) / grandTotalPerPerson;
+      scaleBudget(budgetBreakdown, scaleFactor, travelersCount);
+    }
+  }
+
   return { budget: budgetBreakdown, status: "budget_calculated" };
+};
+
+const scaleBudget = (budget, scaleFactor, travelers) => {
+  if (scaleFactor >= 1.0 || scaleFactor <= 0) return budget;
+
+  const round = (val) => Math.round(val * scaleFactor);
+
+  // 1. Scale travel options
+  if (Array.isArray(budget.travelOptions)) {
+    budget.travelOptions.forEach(opt => {
+      if (opt.arrivalCost) opt.arrivalCost = round(opt.arrivalCost);
+      if (opt.returnCost) opt.returnCost = round(opt.returnCost);
+      if (opt.totalTravelCost) opt.totalTravelCost = round(opt.totalTravelCost);
+    });
+  }
+
+  // 2. Scale dayWiseBudget and recalculate dailyTotal
+  if (Array.isArray(budget.dayWiseBudget)) {
+    budget.dayWiseBudget.forEach(d => {
+      d.hotelCost = round(d.hotelCost || 0);
+      d.breakfastCost = round(d.breakfastCost || 0);
+      d.lunchCost = round(d.lunchCost || 0);
+      d.dinnerCost = round(d.dinnerCost || 0);
+      d.localTransportCost = round(d.localTransportCost || 0);
+      d.sightseeingCost = round(d.sightseeingCost || 0);
+      d.miscellaneousCost = round(d.miscellaneousCost || 0);
+
+      d.dailyTotal = d.hotelCost + d.breakfastCost + d.lunchCost + d.dinnerCost + d.localTransportCost + d.sightseeingCost + d.miscellaneousCost;
+    });
+  }
+
+  // 3. Scale itemizedDetails
+  if (budget.itemizedDetails && typeof budget.itemizedDetails === 'object') {
+    Object.keys(budget.itemizedDetails).forEach(k => {
+      if (budget.itemizedDetails[k] && typeof budget.itemizedDetails[k].estimatedCost === 'number') {
+        budget.itemizedDetails[k].estimatedCost = round(budget.itemizedDetails[k].estimatedCost);
+      }
+    });
+  }
+
+  // Recalculate summary totals
+  const travelOpts = budget.travelOptions || [];
+  let flightCost = 0;
+  let trainCost = 0;
+  let busCost = 0;
+  let recommendedCost = 0;
+
+  travelOpts.forEach(opt => {
+    const mode = opt.mode || '';
+    const cost = opt.totalTravelCost || (opt.arrivalCost + opt.returnCost) || 0;
+    if (mode.toLowerCase().includes('flight')) flightCost = cost;
+    else if (mode.toLowerCase().includes('train')) trainCost = cost;
+    else if (mode.toLowerCase().includes('bus') || mode.toLowerCase().includes('car')) busCost = cost;
+
+    if (opt.recommended) {
+      recommendedCost = cost;
+    }
+  });
+
+  if (recommendedCost === 0 && travelOpts.length > 0) {
+    const recOpt = travelOpts.find(o => o.recommended) || travelOpts[0];
+    recommendedCost = recOpt.totalTravelCost || (recOpt.arrivalCost + recOpt.returnCost) || 0;
+  }
+
+  const numTravelers = travelers || budget.overview?.travelers || 2;
+  const travelPerPerson = Math.round(recommendedCost / numTravelers);
+
+  const totalDailyCost = Array.isArray(budget.dayWiseBudget) ? budget.dayWiseBudget.reduce((s, d) => s + d.dailyTotal, 0) : 0;
+  const perPersonEstimate = totalDailyCost + travelPerPerson;
+
+  budget.budgetSummary = {
+    finalTripTotalRange: {
+      min: Math.round(perPersonEstimate * 0.9),
+      max: Math.round(perPersonEstimate * 1.1)
+    },
+    perPersonEstimate,
+    totalFlightTrip: totalDailyCost + Math.round(flightCost / numTravelers),
+    totalTrainTrip: totalDailyCost + Math.round(trainCost / numTravelers),
+    totalBusTrip: totalDailyCost + Math.round(busCost / numTravelers)
+  };
+
+  return budget;
 };
 
 module.exports = { budgetNode };

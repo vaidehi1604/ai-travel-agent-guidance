@@ -43,7 +43,10 @@ module.exports = {
         //if any rule is violated
         return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
           status: HTTP_STATUS_CODE.BAD_REQUEST,
-          message: 'Validation error',
+           message:
+            validation.errors.all()[
+              Object.keys(validation.errors.all() || [])?.[0]
+            ]?.[0] || 'Invalid formate of password or email',
           data: '',
           error: validation.errors.all(),
         });
@@ -198,9 +201,13 @@ module.exports = {
       let validation = new VALIDATOR(validationData, validationObject);
 
       if (validation.fails()) {
+        //if any rule is violated
         return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
           status: HTTP_STATUS_CODE.BAD_REQUEST,
-          message: 'Validation error',
+           message:
+            validation.errors.all()[
+              Object.keys(validation.errors.all() || [])?.[0]
+            ]?.[0] || 'Invalid formate of password or email',
           data: '',
           error: validation.errors.all(),
         });

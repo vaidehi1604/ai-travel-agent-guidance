@@ -29,6 +29,11 @@ const TravelPlan = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    persons: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 2,
+    },
     weatherSummary: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -56,6 +61,20 @@ const TravelPlan = sequelize.define(
     packages: {
       type: DataTypes.JSONB,
       allowNull: true,
+    },
+    areas: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    sharedWith: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: [],
+    },
+    comments: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: [],
     },
     ...models.defaultAttributes,
   },

@@ -34,7 +34,7 @@ const hotelNode = async (state) => {
     - rating: A star rating (e.g., "4.5/5")
     - link: A placeholder link or search link (e.g., "https://www.booking.com/searchresults.html?ss=HotelName")
 
-  Return ONLY a valid JSON array of objects.`;
+  CRITICAL: Return ONLY a valid JSON array of objects matching the schema. Do NOT include any introductory, conversational, or concluding text (e.g., do NOT start with "Based on the...", and do NOT include any trailing notes or explanations). You must output nothing else except the raw JSON structure.`;
 
   const response = await llm.invoke([
     new SystemMessage(systemPrompt),
