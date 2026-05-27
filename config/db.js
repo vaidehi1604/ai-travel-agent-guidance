@@ -27,7 +27,7 @@ const connectDB = async () => {
       console.warn('⚠️ pgvector extension not available on this system. Vector features will be disabled.');
     }
 
-    await sequelize.sync({ force: true });
+    await sequelize.sync({ force: false });
     console.log('✅ Database synced');
   } catch (err) {
     console.error('❌ DB connection failed:', err);
