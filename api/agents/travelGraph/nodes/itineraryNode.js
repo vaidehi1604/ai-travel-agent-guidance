@@ -60,12 +60,19 @@ Examples:
   ]);
 
   const itinerary = safeJsonParse(response.content);
-  if (!itinerary) {
-    console.error('Failed to parse itinerary:', response.content);
-    return {
-      error: 'Failed to generate itinerary from LLM response',
-      status: 'error',
-    };
+  if (!itinerary || (Array.isArray(itinerary) && itinerary.length === 0)) {
+    console.warn('Failed to parse itinerary, using fallback:', response.content?.slice(0, 200));
+    // Return a basic fallback itinerary so the DB insert doesn't fail
+    const fallbackDays = parseInt(intent?.days) || 3;
+    const fallback = Array.from({ length: fallbackDays }, (_, i) => ({
+      title: `Day ${i + 1}`,
+      morning: `Explore ${intent?.destination || 'the destination'} in the morning.`,
+      afternoon: 'Visit local attractions and enjoy lunch at a nearby restaurant.',
+      evening: 'Relax, explore local markets, and enjoy dinner.',
+      restaurants: ['Local restaurant (ask your hotel for recommendations)'],
+      tips: 'Stay hydrated and carry local currency for small purchases.',
+    }));
+    return { itinerary: fallback, status: 'itinerary_fallback' };
   }
 
   return { itinerary, status: 'itinerary_generated' };

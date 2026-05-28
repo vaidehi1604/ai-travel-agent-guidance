@@ -58,7 +58,7 @@ const packageNode = async (state) => {
 
     const systemPrompt = `You are a Travel Package Recommendation Agent.
 
-Your job is to find the best travel packages for the user's destination and trip dates from trusted travel platforms like Viator, MakeMyTrip, Holidify, Yatra, Goibibo, Thomas Cook, Booking.com Experiences, or similar providers. Do NOT suggest Thrillophilia packages.
+Your job is to find the best travel packages for the user's destination and trip dates from trusted travel platforms like Thrillophilia, MakeMyTrip, Yatra, Goibibo, Thomas Cook, Viator, Booking.com Experiences, or similar providers.
 
 IMPORTANT:
 - Focus on LOWEST COST and BEST VALUE packages.
@@ -71,6 +71,7 @@ IMPORTANT:
   - verified providers
 - Avoid duplicate packages.
 - Prioritize packages matching the user's trip duration and interests.
+- If the user's interests include honeymoon or romantic, include at least one Thrillophilia honeymoon package.
 
 TASKS:
 1. Suggest real or highly realistic travel packages/activities/tours.
@@ -88,7 +89,7 @@ TASKS:
     "packages": [
       {
         "title": "Package Title",
-        "provider": "Thomas Cook | MakeMyTrip | Yatra | Goibibo | Viator | Booking.com",
+        "provider": "Thrillophilia | Thomas Cook | MakeMyTrip | Yatra | Goibibo | Viator | Booking.com",
         "price": "Approximate starting price in INR per person (integer, e.g., 45000)",
         "currency": "INR",
         "duration": "Duration (e.g., '5 Days / 4 Nights')",
@@ -96,7 +97,7 @@ TASKS:
         "inclusions": ["Inclusion 1", "Inclusion 2"],
         "highlights": ["Highlight 1", "Highlight 2"],
         "packageType": "tour | activity | stay | combo",
-        "source": "Thomas Cook | MakeMyTrip | Yatra | Goibibo | Viator | Booking.com"
+        "source": "Thrillophilia | Thomas Cook | MakeMyTrip | Yatra | Goibibo | Viator | Booking.com"
       }
     ]
   }
@@ -144,11 +145,33 @@ RULES:
       }
     }
 
-    // Filter out Thrillophilia packages to be absolutely certain it's removed
+    // Deduplicate packages by title
+    const seenTitles = new Set();
     packagesData = packagesData.filter((pkg) => {
-      const providerName = (pkg.source || pkg.provider || '').toLowerCase();
-      return !providerName.includes('thrillophilia');
+      const key = (pkg.title || '').toLowerCase().trim();
+      if (seenTitles.has(key)) return false;
+      seenTitles.add(key);
+      return true;
     });
+
+    /**
+     * Compute a budget range from the client's stated budget.
+     * Rule:
+     *   min = max(20_000,  budget - 25_000)  → never below ₹20k
+     *   max = ceil((budget + 5_000) / 10_000) * 10_000  → next ₹10k above budget+5k
+     *
+     * Examples:
+     *   45,000 → min 20,000 / max 50,000
+     *   30,000 → min 20,000 / max 40,000
+     *   60,000 → min 35,000 / max 70,000
+     */
+    const computeBudgetRange = (rawBudget) => {
+      const budget = parseInt(String(rawBudget || '').replace(/[^0-9]/g, '')) || 0;
+      if (!budget) return null; // no budget provided → don't append filter
+      const minBudget = Math.max(20000, budget - 25000);
+      const maxBudget = Math.ceil((budget + 5000) / 10000) * 10000;
+      return { minBudget, maxBudget };
+    };
 
     // Programmatic URL generator strictly following website-wise formats
     const buildBookingUrl = (
@@ -156,7 +179,9 @@ RULES:
       destinationName,
       sourceCity,
       startDateVal,
-      pkgPrice
+      pkgPrice,
+      userPreferences,
+      userBudget
     ) => {
       const dest = destinationName || 'Bali';
       const destSlug = slugify(dest);
@@ -171,88 +196,168 @@ RULES:
         }
       }
 
-      const priceNum =
-        parseInt(String(pkgPrice || '').replace(/[^0-9]/g, '')) || 35000;
-      // Thrillophilia specific pricing boundaries
-      const minPrice = Math.max(1000, Math.floor(priceNum * 0.8));
-      const maxPrice = Math.max(minPrice + 10000, Math.floor(priceNum * 1.5));
-
       const cleanSource = (providerName || '').toLowerCase();
+      const prefLower = (userPreferences || '').toLowerCase();
+      const isHoneymoon =
+        prefLower.includes('honeymoon') || prefLower.includes('romantic');
 
-      // 1. Thomas Cook
+      // ─────────────────────────────────────────────
+      // 1. Thrillophilia – smart URL routing
+      // ─────────────────────────────────────────────
+      if (cleanSource.includes('thrillophilia')) {
+        // Map of city slugs → Thrillophilia /cities/ path
+        const thrilloCityMap = {
+          dubai: 'dubai',
+          manali: 'manali',
+          goa: 'goa',
+          kerala: 'kerala',
+          shimla: 'shimla',
+          mussoorie: 'mussoorie',
+          ooty: 'ooty',
+          munnar: 'munnar',
+          jaipur: 'jaipur',
+          udaipur: 'udaipur',
+          ladakh: 'ladakh',
+          kashmir: 'kashmir',
+          singapore: 'singapore',
+          bangkok: 'bangkok',
+          phuket: 'phuket',
+          'kuala lumpur': 'kuala-lumpur',
+          maldives: 'maldives',
+          mauritius: 'mauritius',
+          istanbul: 'istanbul',
+          paris: 'paris',
+          london: 'london',
+          swiss: 'swiss',
+          switzerland: 'swiss',
+          amsterdam: 'amsterdam',
+          rishikesh: 'rishikesh',
+          coorg: 'coorg',
+          darjeeling: 'darjeeling',
+          nainital: 'nainital',
+          mcleod: 'mcleodganj',
+          mcleodganj: 'mcleodganj',
+          dharamshala: 'dharamshala',
+          spiti: 'spiti',
+          leh: 'leh',
+        };
+
+        // Map of state/region slugs → Thrillophilia /states/ path
+        const thrilloStateMap = {
+          bali: 'bali-state',
+          rajasthan: 'rajasthan-state',
+          himachal: 'himachal-pradesh-state',
+          uttarakhand: 'uttarakhand-state',
+          'north east': 'north-east-state',
+          sikkim: 'sikkim-state',
+          andaman: 'andaman-nicobar-state',
+          'andaman and nicobar': 'andaman-nicobar-state',
+          vietnam: 'vietnam-country',
+          indonesia: 'indonesia-country',
+          thailand: 'thailand-country',
+          europe: 'europe-continent',
+        };
+
+        // Check if destination matches a city
+        const cityKey = Object.keys(thrilloCityMap).find((k) =>
+          destSlug.includes(k.replace(/\s+/g, '-'))
+        );
+
+        if (cityKey) {
+          const cityPath = thrilloCityMap[cityKey];
+          if (isHoneymoon) {
+            return `https://www.thrillophilia.com/cities/${cityPath}/tags/honeymoon`;
+          }
+          return `https://www.thrillophilia.com/cities/${cityPath}/tours`;
+        }
+
+        // Check if destination matches a state/region
+        const stateKey = Object.keys(thrilloStateMap).find((k) =>
+          destSlug.includes(k.replace(/\s+/g, '-'))
+        );
+
+        if (stateKey) {
+          const statePath = thrilloStateMap[stateKey];
+          if (isHoneymoon) {
+            return `https://www.thrillophilia.com/states/${statePath}/tags/honeymoon`;
+          }
+          return `https://www.thrillophilia.com/states/${statePath}/tours`;
+        }
+
+        // Generic Thrillophilia fallback using search
+        const tag = isHoneymoon ? '/tags/honeymoon' : '/tours';
+        return `https://www.thrillophilia.com/cities/${destSlug}${tag}`;
+      }
+
+      // ─────────────────────────────────────────────
+      // 2. Thomas Cook
+      // ─────────────────────────────────────────────
       if (
         cleanSource.includes('thomas cook') ||
         cleanSource.includes('thomascook')
       ) {
-        // Comprehensive list of Indian destinations and states
         const indiaDestinations = [
-          'india',
-          'goa',
-          'kerala',
-          'rajasthan',
-          'himachal',
-          'uttarakhand',
-          'kashmir',
-          'ladakh',
-          'sikkim',
-          'gujarat',
-          'mumbai',
-          'delhi',
-          'kedarnath',
-          'kedarkantha',
-          'manali',
-          'shimla',
-          'mussoorie',
-          'darjeeling',
-          'agra',
-          'varanasi',
-          'jaipur',
-          'udaipur',
-          'goa',
-          'cochin',
-          'india',
-          'rishikesh',
-          'ooty',
-          'coonoor',
-          'munnar',
-          'kochi',
-          'bangalore',
+          'india', 'goa', 'kerala', 'rajasthan', 'himachal', 'uttarakhand',
+          'kashmir', 'ladakh', 'sikkim', 'gujarat', 'mumbai', 'delhi',
+          'kedarnath', 'kedarkantha', 'manali', 'shimla', 'mussoorie',
+          'darjeeling', 'agra', 'varanasi', 'jaipur', 'udaipur', 'cochin',
+          'rishikesh', 'ooty', 'coonoor', 'munnar', 'kochi', 'bangalore',
           'hyderabad',
         ];
         const isIndia = indiaDestinations.some((kw) => destSlug.includes(kw));
         const category = isIndia
           ? 'india-tour-packages'
           : 'international-tour-packages';
-        return `https://www.thomascook.in/holidays/${category}/${destSlug}-tour-packages`;
+        const tcRange = computeBudgetRange(userBudget);
+        const tcBudgetParam = tcRange
+          ? `?filter_budgetRange=${tcRange.minBudget}-to-${tcRange.maxBudget}`
+          : '';
+        return `https://www.thomascook.in/holidays/${category}/${destSlug}-tour-packages${tcBudgetParam}`;
       }
 
-      // 2. MakeMyTrip Holidays
+      // ─────────────────────────────────────────────
+      // 3. MakeMyTrip Holidays
+      // ─────────────────────────────────────────────
       if (cleanSource.includes('makemytrip') && !cleanSource.includes('gi')) {
-        return `https://holidayz.makemytrip.com/holidays/india/search?depCity=${encodeURIComponent(src)}&dateSearched=${encodeURIComponent(dateStr)}&dest=${encodeURIComponent(dest)}&destValue=${encodeURIComponent(dest)}&glp=true&pdo=true&affiliate=MMT&rooms=1,0,0,0,,,`;
+        const mmtRange = computeBudgetRange(userBudget);
+        const mmtBudgetParam = mmtRange
+          ? `&version=3&budget=${mmtRange.minBudget}_${mmtRange.maxBudget}`
+          : '&version=3';
+        return `https://holidayz.makemytrip.com/holidays/india/search?depCity=${encodeURIComponent(src)}&dateSearched=${encodeURIComponent(dateStr)}&dest=${encodeURIComponent(dest)}&destValue=${encodeURIComponent(dest)}&glp=true&pdo=true&affiliate=MMT&rooms=1%2C0%2C0%2C0%2C%2C%2C${mmtBudgetParam}`;
       }
 
-      // 3. Thrillophilia (Removed)
-
+      // ─────────────────────────────────────────────
       // 4. Yatra Holidays
+      // ─────────────────────────────────────────────
       if (cleanSource.includes('yatra')) {
         return `https://packages.yatra.com/holidays/intl/search.htm?destination=${encodeURIComponent(dest)}`;
       }
 
-      // 5. Goibibo / MakeMyTrip GI Holidays
+      // ─────────────────────────────────────────────
+      // 5. Goibibo / GI Holidays
+      // ─────────────────────────────────────────────
       if (
         cleanSource.includes('goibibo') ||
         cleanSource.includes('gi holidays') ||
         cleanSource.includes('giholidays')
       ) {
-        return `https://giholidays.makemytrip.com/holidays/india/search?dest=${encodeURIComponent(dest)}`;
+        const giRange = computeBudgetRange(userBudget);
+        const giBudgetParam = giRange
+          ? `&version=3&budget=${giRange.minBudget}_${giRange.maxBudget}`
+          : '&version=3';
+        return `https://giholidays.makemytrip.com/holidays/india/search?dest=${encodeURIComponent(dest)}${giBudgetParam}`;
       }
 
-      // 6. Viator Fallback
+      // ─────────────────────────────────────────────
+      // 6. Viator
+      // ─────────────────────────────────────────────
       if (cleanSource.includes('viator')) {
         return `https://www.viator.com/searchResults/all?text=${encodeURIComponent(dest)}`;
       }
 
-      // 7. Booking.com Fallback
+      // ─────────────────────────────────────────────
+      // 7. Booking.com
+      // ─────────────────────────────────────────────
       if (cleanSource.includes('booking')) {
         return `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(dest)}`;
       }
@@ -313,7 +418,9 @@ RULES:
         cleanDest,
         intent.source,
         startDate,
-        pkg.price
+        pkg.price,
+        preferences,  // honeymoon/romantic detection
+        budgetVal     // client's stated budget for range calculation
       );
 
       // Set both fields to avoid potential mapping issues in frontend/database

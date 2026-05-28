@@ -188,8 +188,19 @@ Rules:
 
   const budgetBreakdown = safeJsonParse(response.content);
   if (!budgetBreakdown) {
-    console.error("Failed to parse budget:", response.content);
-    return { error: "Failed to generate travel budget from LLM response", status: "error" };
+    console.warn("Failed to parse budget, using fallback:", response.content?.slice(0, 200));
+    // Return a minimal fallback so the graph continues and DB insert succeeds
+    return {
+      budget: {
+        overview: { destination: intent.destination, duration: days, travelers: intent.persons || 2, currency: 'INR', budgetTier: 'Budget' },
+        travelOptions: [],
+        dayWiseBudget: [],
+        budgetSummary: { finalTripTotalRange: { min: 0, max: limitBudgetVal }, perPersonEstimate: limitBudgetVal, totalFlightTrip: 0, totalTrainTrip: 0, totalBusTrip: 0 },
+        itemizedDetails: {},
+        tips: ['Book early for best prices.', 'Carry cash for local vendors.'],
+      },
+      status: 'budget_fallback'
+    };
   }
 
   // Auto-adjust budget breakdown to fit the user's specified budget limit (safety net)

@@ -127,6 +127,16 @@ module.exports = {
         });
       }
 
+      // Guard: itinerary must exist (allowNull: false in DB schema)
+      if (!finalState.itinerary || (Array.isArray(finalState.itinerary) && finalState.itinerary.length === 0)) {
+        console.error('Graph completed but itinerary is missing:', JSON.stringify(finalState.status));
+        return res.status(HTTP_STATUS_CODE.SERVER_ERROR).json({
+          status: HTTP_STATUS_CODE.SERVER_ERROR,
+          message: 'Travel plan generation incomplete — please try again.',
+          error: 'Itinerary was not generated. The AI may have timed out or returned an invalid response.',
+        });
+      }
+
       // Save to Database
       const planId = uuidv4();
       const source = normalizeStringField(finalState.intent.source, 'Unknown');
@@ -138,19 +148,19 @@ module.exports = {
       const travelPlan = await TravelPlan.create({
         id: planId,
         userId,
-        source,
-        destination,
-        budget: finalState.intent.budget || 0,
-        days: finalState.intent.days || 3,
-        persons: finalState.intent.persons || 2,
-        weatherSummary: JSON.stringify(finalState.weather),
-        itinerary: finalState.itinerary,
-        bookingLinks: finalState.links,
-        hotels: finalState.hotels,
-        travel: finalState.travel,
-        budgetBreakdown: finalState.budget,
-        packages: finalState.packages,
-        areas: finalState.areas,
+        source: normalizeStringField(finalState.intent?.source, req.user?.city || 'Unknown'),
+        destination: normalizeStringField(finalState.intent?.destination, 'Unknown'),
+        budget: finalState.intent?.budget || 0,
+        days: finalState.intent?.days || 3,
+        persons: finalState.intent?.persons || 2,
+        weatherSummary: finalState.weather ? JSON.stringify(finalState.weather) : null,
+        itinerary: finalState.itinerary || [],
+        bookingLinks: finalState.links || null,
+        hotels: finalState.hotels || null,
+        travel: finalState.travel || null,
+        budgetBreakdown: finalState.budget || null,
+        packages: finalState.packages || null,
+        areas: finalState.areas || null,
         createdBy: userId,
       });
 
