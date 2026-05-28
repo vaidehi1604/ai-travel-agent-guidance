@@ -80,9 +80,9 @@ module.exports = {
       // If planId is provided, fetch interactions specific to that plan.
       const whereClause = { userId };
       if (plan && plan.id) {
-        whereClause.metadata = { planId: plan.id };
+        whereClause['metadata.planId'] = plan.id;
       } else if (req.body.planId) {
-        whereClause.metadata = { planId: req.body.planId };
+        whereClause['metadata.planId'] = req.body.planId;
       } else {
         // If no plan, we might just fetch the global chat
       }
@@ -179,7 +179,7 @@ Whenever you provide travel-related information such as train timings, bus sched
 
       const whereClause = { userId };
       if (planId) {
-        whereClause.metadata = { planId };
+        whereClause['metadata.planId'] = planId;
       }
 
       const history = await Memory.findAll({
