@@ -18,12 +18,15 @@ const linkGeneratorNode = async (state) => {
   const sourceEncoded = encodeURIComponent(source);
   const numPersons = persons || 2;
 
+  const sourceSlug = (source || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+  const destSlug = (destination || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+
   const links = {
     // All search URLs use the exact user-entered destination
     google_search: `https://www.google.com/search?q=top+places+to+visit+in+${destinationEncoded}`,
     flight_search: `https://www.google.com/travel/flights?q=flights+from+${sourceEncoded}+to+${flightDestinationEncoded}`,
     hotel_search: `https://www.booking.com/searchresults.html?ss=${destinationEncoded}&group_adults=${numPersons}`,
-    train_search: `https://www.google.com/search?q=trains+from+${sourceEncoded}+to+${destinationEncoded}`,
+    train_search: `https://www.goibibo.com/trains/${sourceSlug}-to-${destSlug}-trains/#all`,
     bus_search: `https://www.google.com/search?q=bus+from+${sourceEncoded}+to+${destinationEncoded}`,
     activities: `https://www.viator.com/searchResults/all?text=${destinationEncoded}`
   };

@@ -36,11 +36,11 @@ const buildGraph = () => {
     .addEdge("preference_node", "weather_node")
     .addEdge("weather_node", "areaSelector_node")
     .addEdge("areaSelector_node", "travel_node")
-    .addEdge("travel_node", "budget_node")
-    .addEdge("budget_node", "package_node")
+    .addEdge("travel_node", "package_node")
     .addEdge("package_node", "hotel_node")
     .addEdge("hotel_node", "activity_node")
-    .addEdge("activity_node", "itinerary_node")
+    .addEdge("activity_node", "budget_node")
+    .addEdge("budget_node", "itinerary_node")
     .addEdge("itinerary_node", "linkGenerator_node")
     .addEdge("linkGenerator_node", END);
 

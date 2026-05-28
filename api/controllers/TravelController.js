@@ -1,6 +1,7 @@
 const { travelGraph } = require('../agents/travelGraph');
 const { saveToMemory } = require('../agents/travelGraph/nodes/memoryNode');
 const TravelPlan = require('../model/TravelPlan');
+const Memory = require('../model/Memory');
 const { HTTP_STATUS_CODE, uuidv4 } = require('../../config/constants');
 const { Op } = require('sequelize');
 const { preferenceNode } = require('../agents/travelGraph/nodes/preferenceNode');
@@ -101,6 +102,24 @@ module.exports = {
           const memoryContent = `User planned a trip for ${intent.persons || 2} persons from ${travelPlan.source} to ${travelPlan.destination} for ${travelPlan.days} days with a budget of ${travelPlan.budget}. (Restored from cache)`;
           await saveToMemory(userId, memoryContent, { planId });
 
+          // Associate previous unassociated chat memories with this planId
+          try {
+            const allChats = await Memory.findAll({
+              where: {
+                userId,
+                'metadata.type': 'chat'
+              }
+            });
+            for (const chat of allChats) {
+              if (!chat.metadata || chat.metadata.planId === undefined || chat.metadata.planId === null || chat.metadata.planId === 'null') {
+                chat.metadata = { ...chat.metadata, planId };
+                await chat.save();
+              }
+            }
+          } catch (memErr) {
+            console.error('Failed to associate pre-generation memory chat history:', memErr);
+          }
+
           return res.status(HTTP_STATUS_CODE.OK).json({
             status: HTTP_STATUS_CODE.OK,
             message: 'Travel plan generated successfully (Restored from Cache)',
@@ -167,6 +186,24 @@ module.exports = {
       // Save to Memory (for future context)
       const memoryContent = `User planned a trip for ${finalState.intent.persons || 2} persons from ${travelPlan.source} to ${travelPlan.destination} for ${travelPlan.days} days with a budget of ${travelPlan.budget}.`;
       await saveToMemory(userId, memoryContent, { planId });
+
+      // Associate previous unassociated chat memories with this planId
+      try {
+        const allChats = await Memory.findAll({
+          where: {
+            userId,
+            'metadata.type': 'chat'
+          }
+        });
+        for (const chat of allChats) {
+          if (!chat.metadata || chat.metadata.planId === undefined || chat.metadata.planId === null || chat.metadata.planId === 'null') {
+            chat.metadata = { ...chat.metadata, planId };
+            await chat.save();
+          }
+        }
+      } catch (memErr) {
+        console.error('Failed to associate pre-generation memory chat history:', memErr);
+      }
 
       return res.status(HTTP_STATUS_CODE.OK).json({
         status: HTTP_STATUS_CODE.OK,

@@ -4,6 +4,122 @@ const { safeJsonParse } = require('../../../../utils/jsonParser');
 const axios = require('axios');
 
 /**
+ * Helper to generate a realistic fallback budget object when LLM parsing fails.
+ */
+const generateFallbackBudget = (destination, source, duration, travelers, limitBudgetVal, travel) => {
+  const travelersCount = travelers || 2;
+  const days = duration || 3;
+  const totalVal = limitBudgetVal || 50000;
+  const perPersonVal = Math.round(totalVal / travelersCount);
+
+  // Estimate travel cost from travel options if available
+  const travelOpts = travel?.options || [];
+  const recOpt = travelOpts.find(o => o.recommended) || travelOpts[0];
+  const travelCost = recOpt ? (recOpt.estimated_cost || 0) : Math.round(perPersonVal * 0.25);
+  const travelPerPerson = Math.round(travelCost / travelersCount);
+
+  const dailyBudgetLimit = Math.max(1000, perPersonVal - travelPerPerson);
+  const hotelCost = Math.round(dailyBudgetLimit * 0.45);
+  const foodCost = Math.round(dailyBudgetLimit * 0.25);
+  const localTransportCost = Math.round(dailyBudgetLimit * 0.12);
+  const sightseeingCost = Math.round(dailyBudgetLimit * 0.12);
+  const miscCost = Math.round(dailyBudgetLimit * 0.06);
+
+  const dailyTotal = hotelCost + foodCost + localTransportCost + sightseeingCost + miscCost;
+
+  const dayWiseBudget = [];
+  for (let i = 1; i <= days; i++) {
+    dayWiseBudget.push({
+      day: i,
+      theme: `Day ${i} Exploration`,
+      hotelCost: i === days ? 0 : hotelCost, // no hotel on departure day
+      breakfastCost: Math.round(foodCost * 0.2),
+      lunchCost: Math.round(foodCost * 0.4),
+      dinnerCost: i === days ? 0 : Math.round(foodCost * 0.4),
+      localTransportCost: localTransportCost,
+      sightseeingCost: sightseeingCost,
+      miscellaneousCost: miscCost,
+      dailyTotal: (i === days ? 0 : hotelCost) + Math.round(foodCost * 0.2) + Math.round(foodCost * 0.4) + (i === days ? 0 : Math.round(foodCost * 0.4)) + localTransportCost + sightseeingCost + miscCost
+    });
+  }
+
+  const dayWiseTotal = dayWiseBudget.reduce((s, d) => s + d.dailyTotal, 0);
+  const estimatedTotal = dayWiseTotal + travelPerPerson;
+
+  const comparisonTiers = {
+    budget: {
+      hotel: { type: "Hostel / Guest House", costPerNight: Math.round(hotelCost * 0.4), totalCost: Math.round(hotelCost * 0.4) * (days - 1) },
+      food: { type: "Local / Street Food", costPerDay: Math.round(foodCost * 0.5), totalCost: Math.round(foodCost * 0.5) * days },
+      transport: { type: "Bus / Shared Transport", costPerDay: Math.round(localTransportCost * 0.4), totalCost: Math.round(localTransportCost * 0.4) * days },
+      activities: { type: "Local Sightseeing", costPerDay: Math.round(sightseeingCost * 0.5), totalCost: Math.round(sightseeingCost * 0.5) * days },
+      other: { type: "Shopping / Misc.", costPerDay: Math.round(miscCost * 0.5), totalCost: Math.round(miscCost * 0.5) * days },
+      estimatedTotalPerPerson: (Math.round(hotelCost * 0.4) * (days - 1)) + ((Math.round(foodCost * 0.5) + Math.round(localTransportCost * 0.4) + Math.round(sightseeingCost * 0.5) + Math.round(miscCost * 0.5)) * days) + travelPerPerson
+    },
+    standard: {
+      hotel: { type: "3★ Hotel", costPerNight: hotelCost, totalCost: hotelCost * (days - 1) },
+      food: { type: "Restaurants", costPerDay: foodCost, totalCost: foodCost * days },
+      transport: { type: "Taxi / Local Cab", costPerDay: localTransportCost, totalCost: localTransportCost * days },
+      activities: { type: "Popular Attractions", costPerDay: sightseeingCost, totalCost: sightseeingCost * days },
+      other: { type: "Shopping / Misc.", costPerDay: miscCost, totalCost: miscCost * days },
+      estimatedTotalPerPerson: estimatedTotal
+    },
+    luxury: {
+      hotel: { type: "5★ Resort / Premium Hotel", costPerNight: hotelCost * 2.5, totalCost: hotelCost * 2.5 * (days - 1) },
+      food: { type: "Fine Dining", costPerDay: foodCost * 2.5, totalCost: foodCost * 2.5 * days },
+      transport: { type: "Private Vehicle", costPerDay: localTransportCost * 2.5, totalCost: localTransportCost * 2.5 * days },
+      activities: { type: "Private Tours", costPerDay: sightseeingCost * 2.5, totalCost: sightseeingCost * 2.5 * days },
+      other: { type: "Shopping / Premium", costPerDay: miscCost * 2.5, totalCost: miscCost * 2.5 * days },
+      estimatedTotalPerPerson: (hotelCost * 2.5 * (days - 1)) + ((foodCost * 2.5 + localTransportCost * 2.5 + sightseeingCost * 2.5 + miscCost * 2.5) * days) + (travelPerPerson * 1.5)
+    }
+  };
+
+  const travelOptions = [
+    {
+      mode: "Flight",
+      arrivalCost: travelPerPerson,
+      returnCost: travelPerPerson,
+      totalTravelCost: travelPerPerson * 2 * travelersCount,
+      duration: "Approx. 3h",
+      pros: ["Fastest mode"],
+      cons: ["Higher cost"],
+      recommended: true
+    }
+  ];
+
+  return {
+    overview: {
+      destination,
+      source,
+      duration: days,
+      travelers: travelersCount,
+      currency: "INR",
+      budgetTier: "Standard"
+    },
+    comparisonTiers,
+    travelOptions,
+    dayWiseBudget,
+    budgetSummary: {
+      finalTripTotalRange: {
+        min: Math.round(estimatedTotal * 0.9),
+        max: Math.round(estimatedTotal * 1.1)
+      },
+      perPersonEstimate: estimatedTotal,
+      totalFlightTrip: estimatedTotal,
+      totalTrainTrip: 0,
+      totalBusTrip: 0
+    },
+    itemizedDetails: {
+      flights: { description: `Flights from ${source} to ${destination}`, estimatedCost: travelCost },
+      hotels: { description: `${days - 1} nights in Standard accommodation`, estimatedCost: hotelCost * (days - 1) * travelersCount },
+      meals: { description: `Meals for ${travelersCount} travelers over ${days} days`, estimatedCost: foodCost * days * travelersCount },
+      transportation: { description: `Local travel for ${travelersCount} travelers`, estimatedCost: localTransportCost * days * travelersCount },
+      sightseeing: { description: `Activity fees for ${travelersCount} travelers`, estimatedCost: sightseeingCost * days * travelersCount }
+    },
+    tips: ["Book early for best prices.", "Carry cash for local vendors."]
+  };
+};
+
+/**
  * Budget Agent: Generates a detailed, structured day-wise budget breakdown
  * matching the user's exact required JSON schema with realistic INR pricing.
  */
@@ -11,7 +127,7 @@ const budgetNode = async (state) => {
   console.log("--- BUDGET AGENT ---");
   if (state.error || !state.intent) return state;
 
-  const { intent, travel } = state;
+  const { intent, travel, hotels, packages, activities } = state;
 
   // Enforce a minimum of 3 days if days are not specified, invalid, or less than 3
   let days = parseInt(intent.days);
@@ -52,12 +168,19 @@ const budgetNode = async (state) => {
   }
 
   const limitBudgetVal = parseInt(intent.budget) || 50000;
+  const travelersCount = intent.persons || 2;
 
   const systemPrompt = `You are an expert Financial Travel Planner specializing in Indian travel budgets (INR).
   
 Generate a detailed, structured travel budget for a ${days}-day trip from ${intent.source || 'the source city'} to ${intent.destination}.
-Overall budget context: ${intent.budget}.
-Travel options already analyzed: ${JSON.stringify(travel?.options || [])}.
+Overall budget context: ${intent.budget} INR.
+Number of travelers: ${travelersCount}.
+
+Real-World Data Generated in Previous Steps:
+- Recommended Hotels: ${JSON.stringify(hotels || [])}
+- Recommended Packages: ${JSON.stringify(packages || [])}
+- Feasible Travel Options: ${JSON.stringify(travel?.options || [])}
+- Real-world Activities: ${JSON.stringify(activities || [])}
 
 Real-time Web Pricing Context (use this to ensure highly accurate, current hotel/food/transit rates):
 ${searchContext || "No real-time web pricing context available."}
@@ -76,9 +199,35 @@ Format:
     "destination": "${intent.destination}",
     "source": "${intent.source || 'Unknown'}",
     "duration": ${days},
-    "travelers": ${intent.persons || 2},
+    "travelers": ${travelersCount},
     "currency": "INR",
-    "budgetTier": "3-Star Hotel"
+    "budgetTier": "<Budget | Standard | Luxury>"
+  },
+  "comparisonTiers": {
+    "budget": {
+      "hotel": { "type": "Hostel / Guest House", "costPerNight": <number>, "totalCost": <number> },
+      "food": { "type": "Local / Street Food", "costPerDay": <number>, "totalCost": <number> },
+      "transport": { "type": "Bus / Shared Transport", "costPerDay": <number>, "totalCost": <number> },
+      "activities": { "type": "Local Sightseeing", "costPerDay": <number>, "totalCost": <number> },
+      "other": { "type": "Shopping / Misc.", "costPerDay": <number>, "totalCost": <number> },
+      "estimatedTotalPerPerson": <number>
+    },
+    "standard": {
+      "hotel": { "type": "3★ Hotel", "costPerNight": <number>, "totalCost": <number> },
+      "food": { "type": "Restaurants", "costPerDay": <number>, "totalCost": <number> },
+      "transport": { "type": "Taxi / Local Cab", "costPerDay": <number>, "totalCost": <number> },
+      "activities": { "type": "Popular Attractions", "costPerDay": <number>, "totalCost": <number> },
+      "other": { "type": "Shopping / Misc.", "costPerDay": <number>, "totalCost": <number> },
+      "estimatedTotalPerPerson": <number>
+    },
+    "luxury": {
+      "hotel": { "type": "5★ Resort / Premium Hotel", "costPerNight": <number>, "totalCost": <number> },
+      "food": { "type": "Fine Dining", "costPerDay": <number>, "totalCost": <number> },
+      "transport": { "type": "Private Vehicle", "costPerDay": <number>, "totalCost": <number> },
+      "activities": { "type": "Private Tours", "costPerDay": <number>, "totalCost": <number> },
+      "other": { "type": "Shopping / Premium", "costPerDay": <number>, "totalCost": <number> },
+      "estimatedTotalPerPerson": <number>
+    }
   },
   "travelOptions": [
     {
@@ -179,28 +328,23 @@ Rules:
   * finalTripTotalRange.min = perPersonEstimate * 0.9 (rounded).
   * finalTripTotalRange.max = perPersonEstimate * 1.1 (rounded).`;
 
-  const response = await llm.invoke([
-    new SystemMessage(systemPrompt),
-    new HumanMessage(
-      `Trip: ${intent.source || 'Home City'} → ${intent.destination} | Days: ${intent.days} | Budget: ${intent.budget} | Travelers: ${intent.persons || 2}`
-    )
-  ]);
+  let budgetBreakdown = null;
+  try {
+    const response = await llm.invoke([
+      new SystemMessage(systemPrompt),
+      new HumanMessage(
+        `Trip: ${intent.source || 'Home City'} → ${intent.destination} | Days: ${intent.days} | Budget: ${intent.budget} | Travelers: ${intent.persons || 2}`
+      )
+    ]);
+    budgetBreakdown = safeJsonParse(response.content);
+  } catch (err) {
+    console.error("⚠️ Groq budget calculation invoke failed. Using fallback.", err.message);
+  }
 
-  const budgetBreakdown = safeJsonParse(response.content);
   if (!budgetBreakdown) {
-    console.warn("Failed to parse budget, using fallback:", response.content?.slice(0, 200));
-    // Return a minimal fallback so the graph continues and DB insert succeeds
-    return {
-      budget: {
-        overview: { destination: intent.destination, duration: days, travelers: intent.persons || 2, currency: 'INR', budgetTier: 'Budget' },
-        travelOptions: [],
-        dayWiseBudget: [],
-        budgetSummary: { finalTripTotalRange: { min: 0, max: limitBudgetVal }, perPersonEstimate: limitBudgetVal, totalFlightTrip: 0, totalTrainTrip: 0, totalBusTrip: 0 },
-        itemizedDetails: {},
-        tips: ['Book early for best prices.', 'Carry cash for local vendors.'],
-      },
-      status: 'budget_fallback'
-    };
+    console.warn("Failed to parse budget or invoke failed, using dynamic fallback.");
+    const fallback = generateFallbackBudget(intent.destination, intent.source, days, travelersCount, limitBudgetVal, travel);
+    return { budget: fallback, status: 'budget_fallback' };
   }
 
   // Auto-adjust budget breakdown to fit the user's specified budget limit (safety net)
@@ -208,7 +352,6 @@ Rules:
     const travelOpts = budgetBreakdown.travelOptions || [];
     const recOpt = travelOpts.find(o => o.recommended) || travelOpts[0];
     const recommendedTravelCost = recOpt ? (recOpt.totalTravelCost || (recOpt.arrivalCost + recOpt.returnCost) || 0) : 0;
-    const travelersCount = intent.persons || 2;
     const travelPerPerson = Math.round(recommendedTravelCost / travelersCount);
 
     const daysList = budgetBreakdown.dayWiseBudget || [];
@@ -259,6 +402,26 @@ const scaleBudget = (budget, scaleFactor, travelers) => {
     Object.keys(budget.itemizedDetails).forEach(k => {
       if (budget.itemizedDetails[k] && typeof budget.itemizedDetails[k].estimatedCost === 'number') {
         budget.itemizedDetails[k].estimatedCost = round(budget.itemizedDetails[k].estimatedCost);
+      }
+    });
+  }
+
+  // 4. Scale comparisonTiers if present
+  if (budget.comparisonTiers && typeof budget.comparisonTiers === 'object') {
+    Object.keys(budget.comparisonTiers).forEach(tierKey => {
+      const tier = budget.comparisonTiers[tierKey];
+      if (tier && typeof tier === 'object') {
+        ['hotel', 'food', 'transport', 'activities', 'other'].forEach(itemKey => {
+          const item = tier[itemKey];
+          if (item && typeof item === 'object') {
+            if (item.costPerNight) item.costPerNight = round(item.costPerNight);
+            if (item.costPerDay) item.costPerDay = round(item.costPerDay);
+            if (item.totalCost) item.totalCost = round(item.totalCost);
+          }
+        });
+        if (tier.estimatedTotalPerPerson) {
+          tier.estimatedTotalPerPerson = round(tier.estimatedTotalPerPerson);
+        }
       }
     });
   }
