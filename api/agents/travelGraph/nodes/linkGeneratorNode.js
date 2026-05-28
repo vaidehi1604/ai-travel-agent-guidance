@@ -24,6 +24,7 @@ const linkGeneratorNode = async (state) => {
     flight_search: `https://www.google.com/travel/flights?q=flights+from+${sourceEncoded}+to+${flightDestinationEncoded}`,
     hotel_search: `https://www.booking.com/searchresults.html?ss=${destinationEncoded}&group_adults=${numPersons}`,
     train_search: `https://www.google.com/search?q=trains+from+${sourceEncoded}+to+${destinationEncoded}`,
+    bus_search: `https://www.google.com/search?q=bus+from+${sourceEncoded}+to+${destinationEncoded}`,
     activities: `https://www.viator.com/searchResults/all?text=${destinationEncoded}`
   };
 
