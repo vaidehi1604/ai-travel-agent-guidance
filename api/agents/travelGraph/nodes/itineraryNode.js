@@ -11,8 +11,15 @@ const itineraryNode = async (state) => {
 
   const { intent, weather, areas, travel, budget, hotels, activities } = state;
 
+  const isMulti = intent.is_multi_destination && Array.isArray(intent.sub_destinations) && intent.sub_destinations.length > 1;
+  const destContext = isMulti
+    ? `Multiple destinations in sequence: ${intent.sub_destinations.join(' → ')}. Distribute the ${intent.days} days logically across all destinations (roughly equal split unless one city is clearly bigger). Label each day's section with the city name.`
+    : `Single destination: ${intent.destination}.`;
+
   const systemPrompt = `You are a Professional Travel Guide.
-  Create a detailed day-wise itinerary for a ${intent.days}-day trip to ${intent.destination}.
+  Create a detailed day-wise itinerary for a ${intent.days}-day trip.
+  
+  Destination Context: ${destContext}
   
   Constraints & Context:
   - User Preferences: ${intent.preferences}
@@ -38,12 +45,12 @@ Examples:
 - Recommend sunscreen during hot weather
 - Recommend avoiding trekking during storms/heavy snowfall
 
-  CRITICAL: Return ONLY a valid JSON array matching the format below. Do NOT include any introductory, conversational, or concluding text (e.g., do NOT start with "Based on the...", and do NOT include any trailing notes or explanations). You must output nothing else except the raw JSON structure.
+  CRITICAL: Return ONLY a valid JSON array matching the format below. Do NOT include any introductory, conversational, or concluding text. You must output nothing else except the raw JSON structure.
 
   Format:
   [
     {
-      "title": "Day 1",
+      "title": "Day 1 – Rishikesh",
       "morning": "...",
       "afternoon": "...",
       "evening": "...",

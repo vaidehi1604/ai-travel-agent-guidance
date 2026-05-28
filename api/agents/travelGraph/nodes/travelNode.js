@@ -40,8 +40,8 @@ const travelNode = async (state) => {
 
   const travelData = safeJsonParse(response.content);
   if (!travelData) {
-    console.error("Failed to parse travel options:", response.content);
-    return { error: "Failed to generate travel options from LLM response", status: "error" };
+    console.warn("Failed to parse travel options, using fallback:", response.content?.slice(0, 200));
+    return { travel: { nearest_airport: intent.destination, options: [] }, status: "travel_fallback" };
   }
 
   // Handle both old structure (just options) and new structure (nearest_airport + options)
