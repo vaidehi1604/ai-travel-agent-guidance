@@ -78,7 +78,10 @@ module.exports = {
 
       // 1. Retrieve last 10 chat messages for conversation continuity
       // If planId is provided, fetch interactions specific to that plan.
-      const whereClause = { userId };
+      const whereClause = { 
+        userId,
+        'metadata.type': 'chat'
+      };
       if (plan && plan.id) {
         whereClause['metadata.planId'] = plan.id;
       } else if (req.body.planId) {
@@ -177,7 +180,10 @@ Whenever you provide travel-related information such as train timings, bus sched
       const userId = req.user.id;
       const { planId } = req.query;
 
-      const whereClause = { userId };
+      const whereClause = { 
+        userId,
+        'metadata.type': 'chat'
+      };
       if (planId) {
         whereClause['metadata.planId'] = planId;
       }
