@@ -12,7 +12,12 @@ const travelNode = async (state) => {
   const { intent } = state;
 
   const systemPrompt = `You are a Travel Logistics Expert.
-  Suggest travel options from ${intent.source} to ${intent.destination}.
+  Evaluate and suggest valid travel options from ${intent.source} to ${intent.destination}.
+  
+  FEASIBILITY CHECK:
+  - Before recommending any travel option, verify if that mode of transport (Flight, Train, or Bus/Car) is actually physically possible and feasible for the journey.
+  - If the destination is overseas or separated by sea from the source (e.g., travelling from India to Dubai, Bali, Singapore, Maldives, Europe, etc.), or if there is no rail/road connectivity, you MUST exclude "Train" and "Bus/Car" completely and return ONLY "Flight" options.
+  - Suggest a maximum of 3 total options. Only return options that are physically possible.
   
   Important: If ${intent.destination} does NOT have a commercial airport, identify the nearest major city with an airport (e.g., if destination is Ujjain, the nearest airport is Indore).
   
@@ -22,10 +27,10 @@ const travelNode = async (state) => {
   
   Provide:
   - nearest_airport: Name of the city with the nearest commercial airport (if destination has one, use destination name).
-  - options: Array of travel options (Flights, Trains, Bus/Car).
+  - options: Array of travel options.
   
   For each option include:
-  - mode: Travel mode
+  - mode: Travel mode (must be exactly one of: "Flight", "Train", "Bus/Car")
   - estimated_cost: Approx cost
   - estimated_travel_time: Approx duration
   - pros: Array of pros
