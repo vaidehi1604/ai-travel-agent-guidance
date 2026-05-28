@@ -99,6 +99,13 @@ const preferenceNode = async (state) => {
     return { error: "Failed to extract preferences from LLM response", status: "error" };
   }
 
+  if (!intent.destination || 
+      intent.destination.toLowerCase().trim() === 'unknown' || 
+      intent.destination.toLowerCase().trim() === 'none' || 
+      intent.destination.toLowerCase().trim() === 'null') {
+    return { error: "Could not identify a valid travel destination in your query. Please specify a destination (e.g., 'trip to Paris' or 'Goa').", status: "error" };
+  }
+
   // Enforce a minimum of 3 days if not specified, invalid, or less than 3
   let days = parseInt(intent.days);
   if (isNaN(days) || days < 3) {

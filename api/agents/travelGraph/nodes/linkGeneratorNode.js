@@ -21,15 +21,36 @@ const linkGeneratorNode = async (state) => {
   const sourceSlug = (source || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
   const destSlug = (destination || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
 
+  const isInternationalDestination = (destName) => {
+    const destLower = (destName || '').toLowerCase().trim();
+    const internationalKeywords = [
+      'bali', 'dubai', 'singapore', 'maldives', 'thailand', 'bangkok', 'phuket', 
+      'paris', 'london', 'tokyo', 'switzerland', 'malaysia', 'indonesia', 'vietnam', 
+      'europe', 'usa', 'america', 'new york', 'sri lanka', 'egypt', 'dublin', 'rome',
+      'italy', 'france', 'spain', 'germany', 'australia', 'sydney', 'melbourne', 
+      'canada', 'toronto', 'vancouver', 'turkey', 'istanbul', 'greece', 'athens',
+      'mauritius', 'seychelles', 'baku', 'azerbaijan', 'georgia', 'tbilisi', 'uae',
+      'united arab emirates', 'russia', 'moscow', 'uk', 'united kingdom', 'japan',
+      'hawaii', 'philippines', 'manila', 'hong kong', 'macau', 'china', 'beijing',
+      'shanghai', 'korea', 'seoul'
+    ];
+    return internationalKeywords.some(keyword => destLower.includes(keyword));
+  };
+
+  const isIntl = isInternationalDestination(destination);
+
   const links = {
     // All search URLs use the exact user-entered destination
     google_search: `https://www.google.com/search?q=top+places+to+visit+in+${destinationEncoded}`,
     flight_search: `https://www.google.com/travel/flights?q=flights+from+${sourceEncoded}+to+${flightDestinationEncoded}`,
     hotel_search: `https://www.booking.com/searchresults.html?ss=${destinationEncoded}&group_adults=${numPersons}`,
-    train_search: `https://www.goibibo.com/trains/${sourceSlug}-to-${destSlug}-trains/#all`,
-    bus_search: `https://www.google.com/search?q=bus+from+${sourceEncoded}+to+${destinationEncoded}`,
     activities: `https://www.viator.com/searchResults/all?text=${destinationEncoded}`
   };
+
+  if (!isIntl) {
+    links.train_search = `https://www.goibibo.com/trains/${sourceSlug}-to-${destSlug}-trains/#all`;
+    links.bus_search = `https://www.google.com/search?q=bus+from+${sourceEncoded}+to+${destinationEncoded}`;
+  }
 
   return { links, status: "links_generated" };
 };

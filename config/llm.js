@@ -10,48 +10,79 @@ const llm = new ChatGroq({
 // Sleep helper
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Store reference to the original invoke method
+// Fallback models pool
+const fallbackModels = [
+  "llama-3.3-70b-versatile",
+  "mixtral-8x7b-32768",
+  "gemma2-9b-it"
+];
+
+// Instantiate fallback ChatGroq clients
+const fallbackClients = fallbackModels.map(modelName => new ChatGroq({
+  apiKey: process.env.GROQ_API_KEY,
+  model: modelName,
+  temperature: 0.2,
+  maxRetries: 2,
+}));
+
+// Original invoke for the main instance
 const originalInvoke = llm.invoke.bind(llm);
 
-// Override invoke on the instance to add automatic throttling and rate-limit retries
 llm.invoke = async function (messages, options) {
   let lastError;
-  // We will attempt up to 4 times internally on 429 errors
-  for (let attempt = 1; attempt <= 4; attempt++) {
-    try {
-      // Add a small 2-second rate-limiting delay between sequential calls to spread token usage
-      await sleep(2000);
-      
-      return await originalInvoke(messages, options);
-    } catch (error) {
-      lastError = error;
-      const isRateLimit = 
-        error.status === 429 || 
-        error.message?.includes('429') || 
-        error.message?.includes('rate_limit_exceeded') ||
-        (error.error && JSON.stringify(error.error).includes('rate_limit'));
+  
+  // Attempt 1: Try the primary model
+  try {
+    // Spread requests slightly to prevent transient network collisions
+    await sleep(200);
+    return await originalInvoke(messages, options);
+  } catch (error) {
+    lastError = error;
+    const isRateLimit = 
+      error.status === 429 || 
+      error.message?.includes('429') || 
+      error.message?.includes('rate_limit_exceeded') ||
+      (error.error && JSON.stringify(error.error).includes('rate_limit'));
 
-      if (isRateLimit && attempt < 4) {
-        // Extract retry-after from error headers if present, else default to 8-15 seconds
-        let retryAfter = 8000;
-        if (error.headers && error.headers['retry-after']) {
-          retryAfter = (parseInt(error.headers['retry-after']) * 1000) + 1000; // add a 1s buffer
-        } else if (error.message) {
-          // Try to parse "try again in X.XXs" from the error message
-          const match = error.message.match(/try again in (\d+(\.\d+)?)/i);
-          if (match) {
-            retryAfter = (parseFloat(match[1]) * 1000) + 1500; // add 1.5s buffer
+    if (isRateLimit) {
+      console.warn(`⚠️ Groq Primary Model (${llm.model || llm.modelName || 'llama-3.1-8b-instant'}) Rate Limit (429) hit. Switching to fallback models to bypass wait time...`);
+      
+      // Try fallback models in the pool sequentially
+      for (let i = 0; i < fallbackClients.length; i++) {
+        const fallbackClient = fallbackClients[i];
+        const modelName = fallbackModels[i];
+        try {
+          console.log(`🔄 Retrying with fallback model: ${modelName}...`);
+          return await fallbackClient.invoke(messages, options);
+        } catch (fallbackError) {
+          lastError = fallbackError;
+          const isFallbackRateLimit = 
+            fallbackError.status === 429 || 
+            fallbackError.message?.includes('429') || 
+            fallbackError.message?.includes('rate_limit_exceeded') ||
+            (fallbackError.error && JSON.stringify(fallbackError.error).includes('rate_limit'));
+            
+          if (isFallbackRateLimit) {
+            console.warn(`⚠️ Fallback model ${modelName} also rate limited (429). Trying next fallback...`);
+          } else {
+            throw fallbackError; // If not rate limited, throw immediately
           }
         }
-        console.warn(`⚠️ Groq Rate Limit (429) hit. Waiting ${retryAfter / 1000}s before retrying (Attempt ${attempt}/4)...`);
-        await sleep(retryAfter);
-      } else {
-        // If it's not a rate limit error, throw it immediately
-        throw error;
       }
+    } else {
+      throw error; // If not a rate limit error, throw it immediately
     }
   }
-  throw lastError;
+
+  // If both primary and all fallback models are rate limited, perform a short sleep and retry
+  console.warn(`⚠️ All models in pool rate limited. Sleeping 8s before final retry...`);
+  await sleep(8000);
+  try {
+    // Try primary model once more
+    return await originalInvoke(messages, options);
+  } catch (finalError) {
+    throw finalError;
+  }
 };
 
 module.exports = { llm };
