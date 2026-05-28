@@ -3,77 +3,50 @@ const { HumanMessage, SystemMessage } = require("@langchain/core/messages");
 const { safeJsonParse } = require('../../../../utils/jsonParser');
 
 /**
- * Hotel Agent: Recommends hotels per destination.
- * - Single destination → returns flat array (backward compatible)
- * - Multi-destination → returns grouped array: [{ destination, hotels: [...] }, ...]
+ * Hotel Agent: Recommends hotels based on destination, budget, and persons
  */
 const hotelNode = async (state) => {
   console.log("--- HOTEL AGENT ---");
   if (state.error || !state.intent) return state;
 
   const { intent, budget } = state;
-  const stayBudget = budget && budget["Stay/Accommodation"]
-    ? budget["Stay/Accommodation"]
-    : (intent.budget * 0.4);
+  
+  // Extract budget for stay if budget breakdown exists, otherwise use a fraction of total budget
+  const stayBudget = budget && budget["Stay/Accommodation"] 
+    ? budget["Stay/Accommodation"] 
+    : (intent.budget * 0.4); // Default to 40% of budget for stay
 
-  /**
-   * Fetch hotels for a single destination
-   */
-  const fetchHotelsForDest = async (destName, perDestBudget) => {
-    const systemPrompt = `You are a Hotel Specialist.
-Recommend 2-3 specific hotels/accommodations in ${destName} for a ${intent.days}-day trip.
+  const systemPrompt = `You are a Hotel Specialist.
+  Recommend 3-5 specific hotels/accommodations in ${intent.destination} for a ${intent.days}-day trip.
+  
+  Context:
+  - Destination: ${intent.destination}
+  - Number of Persons: ${intent.persons || 2}
+  - Total Stay Budget: ${stayBudget} (This is for all persons for the entire duration)
+  - Preferences: ${intent.preferences}
 
-Context:
-- Destination: ${destName}
-- Number of Persons: ${intent.persons || 2}
-- Total Stay Budget: ${perDestBudget} (for all persons, entire duration)
-- Preferences: ${intent.preferences}
+  Requirements:
+  - Provide real or highly realistic hotel names.
+  - For each hotel, include:
+    - name: Hotel name
+    - estimated_price: Approx cost for ${intent.days} days for ${intent.persons || 2} people
+    - description: Brief description highlighting why it fits the budget and preferences
+    - rating: A star rating (e.g., "4.5/5")
+    - link: A placeholder link or search link (e.g., "https://www.booking.com/searchresults.html?ss=HotelName")
 
-Requirements:
-- Provide real or highly realistic hotel names.
-- For each hotel include:
-  - name: Hotel name
-  - estimated_price: Approx cost for ${intent.days} days for ${intent.persons || 2} people (INR)
-  - description: Brief description highlighting why it fits the budget and preferences
-  - rating: A star rating (e.g., "4.5/5")
-  - link: Booking.com search link (e.g., "https://www.booking.com/searchresults.html?ss=${encodeURIComponent(destName)}")
+  CRITICAL: Return ONLY a valid JSON array of objects matching the schema. Do NOT include any introductory, conversational, or concluding text (e.g., do NOT start with "Based on the...", and do NOT include any trailing notes or explanations). You must output nothing else except the raw JSON structure.`;
 
-CRITICAL: Return ONLY a valid JSON array. No intro text, no trailing text. Just the raw JSON array.`;
+  const response = await llm.invoke([
+    new SystemMessage(systemPrompt),
+    new HumanMessage(`Destination: ${intent.destination}, Persons: ${intent.persons}, Stay Budget: ${stayBudget}`)
+  ]);
 
-    const response = await llm.invoke([
-      new SystemMessage(systemPrompt),
-      new HumanMessage(`Destination: ${destName}, Persons: ${intent.persons || 2}, Stay Budget: ${perDestBudget}`)
-    ]);
-
-    const hotels = safeJsonParse(response.content);
-    if (!hotels || !Array.isArray(hotels)) {
-      console.warn(`Hotel fetch failed for ${destName}, using empty array`);
-      return [];
-    }
-    return hotels;
-  };
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // MULTI-DESTINATION: generate hotels per city
-  // ─────────────────────────────────────────────────────────────────────────
-  if (intent.is_multi_destination && Array.isArray(intent.sub_destinations) && intent.sub_destinations.length > 1) {
-    console.log(`🏨 Multi-destination hotels for: ${intent.sub_destinations.join(', ')}`);
-
-    const perDestBudget = Math.round(stayBudget / intent.sub_destinations.length);
-    const grouped = [];
-
-    for (const dest of intent.sub_destinations) {
-      const hotels = await fetchHotelsForDest(dest, perDestBudget);
-      grouped.push({ destination: dest, hotels });
-    }
-
-    return { hotels: grouped, status: "hotels_recommended_multi" };
+  const hotels = safeJsonParse(response.content);
+  if (!hotels) {
+    console.error("Failed to parse hotels:", response.content);
+    return { hotels: [], status: "hotel_failed" };
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // SINGLE DESTINATION: flat array (backward compatible)
-  // ─────────────────────────────────────────────────────────────────────────
-  const hotels = await fetchHotelsForDest(intent.destination, stayBudget);
   return { hotels, status: "hotels_recommended" };
 };
 
