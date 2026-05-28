@@ -46,7 +46,7 @@ const preferenceNode = async (state) => {
 
   4. Extract or update the following details:
      - source (current location. Default to home city if not mentioned)
-     - destination (primary travel target — the FIRST mentioned place, spell-corrected)
+     - destination (travel target. If the user specifies multiple destinations, include all of them in correct order joined by " and ", with all place spellings auto-corrected, e.g., "Mussoorie and Rishikesh")
      - sub_destinations (array of ALL destinations spell-corrected, including the primary. For single destination: [destination])
      - is_multi_destination (true if more than one destination, false otherwise)
      - budget (numeric value)
@@ -70,7 +70,7 @@ const preferenceNode = async (state) => {
   Example output for "i want to go mausuri and rishikesh for 5 days budget 40k":
   {
     "source": "Unknown",
-    "destination": "Mussoorie",
+    "destination": "Mussoorie and Rishikesh",
     "sub_destinations": ["Mussoorie", "Rishikesh"],
     "is_multi_destination": true,
     "budget": 40000,

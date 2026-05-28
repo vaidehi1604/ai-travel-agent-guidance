@@ -39,7 +39,9 @@ const weatherNode = async (state) => {
   const locations =
     sub_areas && sub_areas.length > 0
       ? sub_areas
-      : [destination];
+      : (state.intent.sub_destinations && state.intent.sub_destinations.length > 0
+          ? state.intent.sub_destinations
+          : [destination]);
 
   const weatherResults = {};
 
