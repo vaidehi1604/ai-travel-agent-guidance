@@ -63,9 +63,17 @@ const validateTravelFeasibility = async (intent) => {
   const travelers = intent.persons || 2;
   const source = intent.source || 'Unknown';
 
-  // If budget is not specified, 0, or not a positive number, it is always considered "realistic"
+  // If budget is not specified, it is always considered "realistic"
   // because the user is not placing a constraint on the cost.
-  if (budget <= 0) {
+  const rawBudget = intent.budget;
+  if (
+    rawBudget === null ||
+    rawBudget === undefined ||
+    rawBudget === '' ||
+    String(rawBudget).toLowerCase() === 'null' ||
+    String(rawBudget).toLowerCase() === 'none' ||
+    String(rawBudget).toLowerCase() === 'unknown'
+  ) {
     return {
       isRealistic: true,
       reason: "No budget constraint specified.",
