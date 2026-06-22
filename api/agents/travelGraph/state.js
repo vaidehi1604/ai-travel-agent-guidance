@@ -69,6 +69,10 @@ const TravelGraphState = Annotation.Root({
 
   error: Annotation({
     reducer: (x, y) => y ?? x,
+  }),
+
+  overrideBudget: Annotation({
+    reducer: (x, y) => y ?? x,
   })
 });
 

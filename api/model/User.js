@@ -19,6 +19,30 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    cityName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    placeId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    state: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    country: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    latitude: {
+      type: DataTypes.DOUBLE,
+      allowNull: true,
+    },
+    longitude: {
+      type: DataTypes.DOUBLE,
+      allowNull: true,
+    },
     token: {
       type: DataTypes.TEXT,
       allowNull: true,

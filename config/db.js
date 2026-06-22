@@ -27,6 +27,20 @@ const connectDB = async () => {
       console.warn('⚠️ pgvector extension not available on this system. Vector features will be disabled.');
     }
 
+    // Ensure all required location and contact fields exist in the user table
+    try {
+      await sequelize.query('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "cityName" VARCHAR(255)');
+      await sequelize.query('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "placeId" VARCHAR(255)');
+      await sequelize.query('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "state" VARCHAR(255)');
+      await sequelize.query('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "country" VARCHAR(255)');
+      await sequelize.query('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "latitude" DOUBLE PRECISION');
+      await sequelize.query('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "longitude" DOUBLE PRECISION');
+      await sequelize.query('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "countryCode" VARCHAR(255)');
+      await sequelize.query('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "phone" VARCHAR(255)');
+    } catch (e) {
+      console.warn('⚠️ Error adding user columns:', e);
+    }
+
     await sequelize.sync({ force: false });
     console.log('✅ Database synced');
   } catch (err) {

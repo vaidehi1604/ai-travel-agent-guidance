@@ -5,6 +5,7 @@ const Memory = require('../model/Memory');
 const { HTTP_STATUS_CODE, uuidv4 } = require('../../config/constants');
 const { Op } = require('sequelize');
 const { preferenceNode } = require('../agents/travelGraph/nodes/preferenceNode');
+const { validateTravelFeasibility } = require('../helpers/inputValidator');
 
 const normalizeStringField = (value, fallback = 'Unknown') => {
   if (typeof value === 'string') return value;
@@ -39,7 +40,7 @@ module.exports = {
    */
   generatePlan: async (req, res) => {
     try {
-      const { input } = req.body;
+      const { input, bypassValidation } = req.body;
       const userId = req.user.id;
 
       if (!input) {
@@ -55,6 +56,7 @@ module.exports = {
         userId,
         userCity: req.user.city,
         status: 'started',
+        overrideBudget: req.body.overrideBudget ? parseInt(req.body.overrideBudget) : undefined,
       };
       
       const prefState = await preferenceNode(initialPrefState);
@@ -63,6 +65,22 @@ module.exports = {
         console.warn('Preference node failed to extract intent, falling back to full graph invoke');
       } else {
         const intent = prefState.intent;
+
+        // Perform budget validation if not bypassed
+        if (!bypassValidation) {
+          const validationResult = await validateTravelFeasibility(intent);
+          if (validationResult && validationResult.isRealistic === false) {
+            return res.status(HTTP_STATUS_CODE.OK).json({
+              status: HTTP_STATUS_CODE.OK,
+              validationFailed: true,
+              message: validationResult.reason || 'We recommend adjusting your budget for this trip to ensure a feasible plan.',
+              data: {
+                validation: validationResult,
+                intent
+              }
+            });
+          }
+        }
         
         // 2. Search database for an existing cached plan matching place, days, and budget
         const cachedPlan = await TravelPlan.findOne({

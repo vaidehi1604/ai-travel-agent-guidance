@@ -10,6 +10,7 @@ const {
 } = require('../../config/constants');
 const { VALIDATION_RULES } = require('../../config/validationRules');
 const { generateToken } = require('../helpers/auth/generateToken');
+const { verifyPlaceId } = require('../helpers/placeVerifier');
 
 module.exports = {
   /**
@@ -59,7 +60,7 @@ module.exports = {
           email: email.toLowerCase(),
           isDeleted: false,
         },
-        attributes: ['id', 'password', 'isActive', 'name', 'city'],
+        attributes: ['id', 'password', 'isActive', 'name', 'city', 'cityName', 'placeId', 'state', 'country', 'latitude', 'longitude'],
       });
 
       /* This code block is checking if the user is found in the database or not. If the user is not
@@ -105,6 +106,12 @@ module.exports = {
         email: email.toLowerCase(),
         name: user.name,
         city: user.city,
+        cityName: user.cityName,
+        placeId: user.placeId,
+        state: user.state,
+        country: user.country,
+        latitude: user.latitude,
+        longitude: user.longitude,
       };
 
       /* This code is generating access and refresh tokens for the user.*/
@@ -186,17 +193,22 @@ module.exports = {
    */
   register: async (req, res) => {
     try {
-      let { name, email, password, city } = req.body;
+      let { name, email, password, cityName, placeId, latitude, longitude, country, state } = req.body;
 
       // Validation
       let validationObject = {
         name: VALIDATION_RULES.USERS.NAME,
         email: VALIDATION_RULES.USERS.EMAIL,
         password: VALIDATION_RULES.USERS.PASSWORD,
-        city: VALIDATION_RULES.USERS.CITY,
+        cityName: 'required|string',
+        placeId: 'required|string',
+        latitude: 'required|numeric',
+        longitude: 'required|numeric',
+        country: 'required|string',
+        state: 'string',
       };
 
-      let validationData = { name, email, password, city };
+      let validationData = { name, email, password, cityName, placeId, latitude, longitude, country, state };
 
       let validation = new VALIDATOR(validationData, validationObject);
 
@@ -207,11 +219,31 @@ module.exports = {
            message:
             validation.errors.all()[
               Object.keys(validation.errors.all() || [])?.[0]
-            ]?.[0] || 'Invalid formate of password or email',
+            ]?.[0] || 'Invalid input parameters',
           data: '',
           error: validation.errors.all(),
         });
       }
+
+      // 🔍 Verify Place ID with Google Places API (which we migrated to Geoapify)
+      let verifiedCity;
+      try {
+        verifiedCity = await verifyPlaceId(placeId);
+      } catch (err) {
+        return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+          status: HTTP_STATUS_CODE.BAD_REQUEST,
+          message: err.message || 'Invalid city selection (Place ID could not be verified)',
+          data: '',
+          error: err.message,
+        });
+      }
+
+      // Use verified details
+      cityName = verifiedCity.cityName;
+      latitude = verifiedCity.latitude;
+      longitude = verifiedCity.longitude;
+      country = verifiedCity.country;
+      state = verifiedCity.state || state || null;
 
       // 🔍 Check if user already exists
       let existingUser = await User.findOne({
@@ -241,7 +273,13 @@ module.exports = {
         id: userId,
         email: email.toLowerCase(),
         name: name,
-        city: city,
+        city: cityName,
+        cityName,
+        placeId,
+        state,
+        country,
+        latitude,
+        longitude,
       };
 
       const token = await generateToken(
@@ -255,7 +293,13 @@ module.exports = {
         name,
         email: email.toLowerCase(),
         password: hashedPassword,
-        city,
+        city: cityName, // Legacy field support
+        cityName,
+        placeId,
+        state,
+        country,
+        latitude,
+        longitude,
         isActive: true,
         isDeleted: false,
         createdAt: Math.floor(Date.now() / 1000),
@@ -294,7 +338,7 @@ module.exports = {
   updateProfile: async (req, res) => {
     try {
       const user = req.user;
-      const { name, city } = req.body;
+      const { name } = req.body;
 
       if (!user) {
         return res.status(HTTP_STATUS_CODE.UNAUTHORIZED).json({
@@ -307,7 +351,54 @@ module.exports = {
 
       const updates = {};
       if (name !== undefined) updates.name = name;
-      if (city !== undefined) updates.city = city;
+
+
+
+      // Location fields update
+      const { cityName, placeId, latitude, longitude, country, state } = req.body;
+      if (cityName !== undefined || placeId !== undefined || latitude !== undefined || longitude !== undefined || country !== undefined) {
+        // Validation for city fields
+        let validationObject = {
+          cityName: 'required|string',
+          placeId: 'required|string',
+          latitude: 'required|numeric',
+          longitude: 'required|numeric',
+          country: 'required|string',
+          state: 'string',
+        };
+        let validationData = { cityName, placeId, latitude, longitude, country, state };
+        let validation = new VALIDATOR(validationData, validationObject);
+
+        if (validation.fails()) {
+          return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+            status: HTTP_STATUS_CODE.BAD_REQUEST,
+            message: validation.errors.all()[Object.keys(validation.errors.all() || [])?.[0]]?.[0] || 'Invalid input parameters for city update',
+            data: '',
+            error: validation.errors.all(),
+          });
+        }
+
+        // Verify Place ID
+        let verifiedCity;
+        try {
+          verifiedCity = await verifyPlaceId(placeId);
+        } catch (err) {
+          return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+            status: HTTP_STATUS_CODE.BAD_REQUEST,
+            message: err.message || 'Invalid city selection (Place ID could not be verified)',
+            data: '',
+            error: err.message,
+          });
+        }
+
+        updates.city = verifiedCity.cityName; // Legacy support
+        updates.cityName = verifiedCity.cityName;
+        updates.placeId = verifiedCity.placeId;
+        updates.latitude = verifiedCity.latitude;
+        updates.longitude = verifiedCity.longitude;
+        updates.country = verifiedCity.country;
+        updates.state = verifiedCity.state || state || null;
+      }
 
       await user.update(updates);
 
@@ -316,6 +407,12 @@ module.exports = {
         email: user.email,
         name: user.name,
         city: user.city,
+        cityName: user.cityName,
+        placeId: user.placeId,
+        state: user.state,
+        country: user.country,
+        latitude: user.latitude,
+        longitude: user.longitude,
       };
 
       return res.status(HTTP_STATUS_CODE.OK).json({

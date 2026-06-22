@@ -130,6 +130,11 @@ const preferenceNode = async (state) => {
   // Normalise is_multi_destination flag
   intent.is_multi_destination = Array.isArray(intent.sub_destinations) && intent.sub_destinations.length > 1;
 
+  if (state.overrideBudget) {
+    console.log(`✏️ Overriding budget in intent from ${intent.budget} to ${state.overrideBudget}`);
+    intent.budget = state.overrideBudget;
+  }
+
   console.log(`✅ Destinations resolved: ${intent.sub_destinations.join(', ')} | Multi: ${intent.is_multi_destination}`);
 
   return { intent, status: "preferences_extracted" };

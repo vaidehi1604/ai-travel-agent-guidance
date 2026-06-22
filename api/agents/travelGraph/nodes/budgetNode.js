@@ -136,34 +136,42 @@ const budgetNode = async (state) => {
     intent.days = 3; // Update state object as well
   }
 
-  // 1. Fetch real-time web pricing details for the destination via Tavily Search
+  // 1. Fetch real-time web pricing details for the destination via parallel Tavily Searches
   const apiKey = process.env.TAVILY_API_KEY;
   let searchContext = "";
   if (apiKey) {
     try {
-      const searchQuery = `average cost of 3 star hotel, 5 star hotel, hostel, daily food cost, taxi fare, sightseeing tickets in ${intent.destination} INR 2026`;
-      const response = await axios.post(
-        'https://api.tavily.com/search',
-        {
-          api_key: apiKey,
-          query: searchQuery,
-          search_depth: "basic",
-          max_results: 3,
-          include_answer: false,
-          include_images: false,
-          include_raw_content: false
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
-      );
-      const results = response.data.results || [];
-      searchContext = results.map(r => `${r.title}: ${r.content}`).join('\n\n');
-      console.log(`🔍 Fetched budget web pricing context for: ${intent.destination}`);
+      const hotelQuery = `average hotel cost per night budget 3-star 5-star in ${intent.destination} INR 2026`;
+      const foodQuery = `average daily food cost breakfast lunch dinner restaurant in ${intent.destination} INR 2026`;
+      const transportQuery = `local taxi fare auto rickshaw and sightseeing ticket entry fee prices in ${intent.destination} INR 2026`;
+
+      console.log(`🔍 [BudgetNode] Querying Tavily for hotel, food, and transport pricing in ${intent.destination}`);
+
+      const [hotelRes, foodRes, transportRes] = await Promise.all([
+        axios.post('https://api.tavily.com/search', {
+          api_key: apiKey, query: hotelQuery, search_depth: "basic", max_results: 3,
+          include_answer: false, include_images: false, include_raw_content: false,
+        }, { headers: { 'Content-Type': 'application/json' }, timeout: 10000 }),
+        axios.post('https://api.tavily.com/search', {
+          api_key: apiKey, query: foodQuery, search_depth: "basic", max_results: 3,
+          include_answer: false, include_images: false, include_raw_content: false,
+        }, { headers: { 'Content-Type': 'application/json' }, timeout: 10000 }),
+        axios.post('https://api.tavily.com/search', {
+          api_key: apiKey, query: transportQuery, search_depth: "basic", max_results: 3,
+          include_answer: false, include_images: false, include_raw_content: false,
+        }, { headers: { 'Content-Type': 'application/json' }, timeout: 10000 }),
+      ]);
+
+      const fmt = (results) => (results || []).map(r => `${r.title}: ${r.content}`).join('\n');
+
+      searchContext =
+        `[Hotel/Accommodation Costs in ${intent.destination}]\n` + fmt(hotelRes.data.results) +
+        `\n\n[Daily Food & Meal Costs in ${intent.destination}]\n` + fmt(foodRes.data.results) +
+        `\n\n[Local Transport & Sightseeing Costs in ${intent.destination}]\n` + fmt(transportRes.data.results);
+
+      console.log(`✅ [BudgetNode] Fetched real-time budget pricing context for: ${intent.destination}`);
     } catch (e) {
-      console.warn("⚠️ Tavily search for budget pricing failed. Falling back to LLM knowledge.", e.message);
+      console.warn("⚠️ [BudgetNode] Tavily search for budget pricing failed. Falling back to LLM knowledge.", e.message);
     }
   }
 

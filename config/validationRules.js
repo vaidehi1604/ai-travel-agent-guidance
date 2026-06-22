@@ -4,8 +4,6 @@ const VALIDATION_RULES = {
   USERS: {
     ID: 'required|string',
     EMAIL: 'required|string|email',
-    COUNTRY_CODE: 'required|string',
-    PHONE: 'required|string',
     PASSWORD: [
       'required',
       'string',

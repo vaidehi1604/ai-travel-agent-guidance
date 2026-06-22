@@ -1,6 +1,52 @@
 const { llm } = require('../../../../config/llm');
 const { SystemMessage, HumanMessage } = require('@langchain/core/messages');
 const { safeJsonParse } = require('../../../../utils/jsonParser');
+const axios = require('axios');
+
+/**
+ * Minimum realistic per-person package price floors (INR).
+ */
+const PACKAGE_PRICE_FLOORS = {
+  domestic: 5000,
+  international: 40000,
+};
+
+const isInternationalDestination = (destName) => {
+  const destLower = (destName || '').toLowerCase().trim();
+  const internationalKeywords = [
+    'bali', 'dubai', 'singapore', 'maldives', 'thailand', 'bangkok', 'phuket',
+    'paris', 'london', 'tokyo', 'switzerland', 'malaysia', 'indonesia', 'vietnam',
+    'europe', 'usa', 'america', 'new york', 'sri lanka', 'egypt', 'dublin', 'rome',
+    'italy', 'france', 'spain', 'germany', 'australia', 'sydney', 'melbourne',
+    'canada', 'toronto', 'vancouver', 'turkey', 'istanbul', 'greece', 'athens',
+    'mauritius', 'seychelles', 'baku', 'azerbaijan', 'georgia', 'tbilisi', 'uae',
+    'united arab emirates', 'russia', 'moscow', 'uk', 'united kingdom', 'japan',
+    'hawaii', 'philippines', 'manila', 'hong kong', 'macau', 'china', 'beijing',
+    'shanghai', 'korea', 'seoul'
+  ];
+  return internationalKeywords.some(keyword => destLower.includes(keyword));
+};
+
+/**
+ * Validate a URL by performing an HTTP HEAD request.
+ * Returns true if the URL returns a 2xx/3xx status, false otherwise.
+ * Times out after 5 seconds to avoid blocking.
+ */
+const validateUrl = async (url) => {
+  try {
+    const res = await axios.head(url, {
+      timeout: 5000,
+      maxRedirects: 5,
+      validateStatus: (status) => status < 400,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; TravelAgent/1.0)',
+      },
+    });
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
 
 /**
  * Slugify helper to convert text into valid URL slugs
@@ -204,11 +250,41 @@ Format:
         ];
       }
 
-      // Stamp destination-correct booking URLs
-      return pkgs.map(pkg => {
-        const url = buildBookingUrl(pkg.source || pkg.provider || '', destName, intent.source, startDate, pkg.price, preferences, budgetVal);
-        return { ...pkg, bookingUrl: url, url };
+      // Enforce price floors
+      const isIntl = isInternationalDestination(destName);
+      const priceFloor = isIntl ? PACKAGE_PRICE_FLOORS.international : PACKAGE_PRICE_FLOORS.domestic;
+      pkgs = pkgs.map(pkg => {
+        let price = typeof pkg.price === 'string' ? parseInt(pkg.price.replace(/[^0-9]/g, ''), 10) : (typeof pkg.price === 'number' ? pkg.price : 0);
+        if (price > 0 && price < priceFloor) {
+          console.log(`💰 [PackageNode] Price floor enforced for "${pkg.title}": ₹${price} → ₹${priceFloor}`);
+          price = priceFloor;
+        }
+        return { ...pkg, price };
       });
+
+      // Stamp destination-correct booking URLs and validate them
+      const googleFallback = (provider, dest) =>
+        `https://www.google.com/search?q=${encodeURIComponent(dest + ' ' + (provider || '') + ' tour packages')}`;
+
+      const stampedPkgs = await Promise.all(pkgs.map(async (pkg) => {
+        const url = buildBookingUrl(pkg.source || pkg.provider || '', destName, intent.source, startDate, pkg.price, preferences, budgetVal);
+
+        // Validate the URL — if it 404s, fall back to Google search
+        let finalUrl = url;
+        try {
+          const isValid = await validateUrl(url);
+          if (!isValid) {
+            console.log(`🔗 [PackageNode] Invalid URL (404/error): ${url} → using Google fallback`);
+            finalUrl = googleFallback(pkg.source || pkg.provider, destName);
+          }
+        } catch (e) {
+          finalUrl = googleFallback(pkg.source || pkg.provider, destName);
+        }
+
+        return { ...pkg, bookingUrl: finalUrl, url: finalUrl };
+      }));
+
+      return stampedPkgs;
     };
 
     // ── MULTI-DESTINATION: 2–3 packages per city ──────────────────────────────
